@@ -2,19 +2,79 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Cabutan Undi Petanque UniMAP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Petanque Group Draw</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #e0f7fa, #fff);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .container {
+      text-align: center;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 100%;
+      animation: slideIn 0.5s ease-out;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h1 {
+      margin-bottom: 1rem;
+      color: #00796b;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.6rem;
+      border: 2px solid #009688;
+      border-radius: 10px;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    button {
+      background: #009688;
+      color: white;
+      padding: 0.7rem 2rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.3s;
+    }
+    button:hover {
+      background: #00796b;
+      transform: scale(1.05);
+    }
+    #result {
+      margin-top: 1.5rem;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #004d40;
+      min-height: 1.5em;
+    }
+  </style>
 </head>
 <body>
-  <h1>Cabutan Undi Kumpulan</h1>
-  <input type="text" id="pasukan" placeholder="Nama Pasukan">
-  <button id="cabutUndi">Cabut Undi</button>
-
-  <h2 id="hasil"></h2>
+  <div class="container">
+    <h1>Petanque Group Draw</h1>
+    <input type="text" id="teamName" placeholder="Enter your team name" />
+    <button id="drawBtn">Draw Group</button>
+    <div id="result"></div>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyD3HWMOc1ShuEwEGRnQNoXPj-FEmHpDPFI",
@@ -28,27 +88,49 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const kumpulanList = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const drawBtn = document.getElementById("drawBtn");
+    const result = document.getElementById("result");
 
-    document.getElementById("cabutUndi").onclick = async () => {
-      const nama = document.getElementById("pasukan").value.trim();
-      if (!nama) return alert("Sila isi nama pasukan.");
+    const groups = ["A", "B", "C", "D", "E", "F"];
 
-      // Semak jika pasukan dah undi
-      const q = query(collection(db, "cabutan"), where("nama", "==", nama));
-      const snapshot = await getDocs(q);
-      if (!snapshot.empty) {
-        document.getElementById("hasil").innerText = `Pasukan "${nama}" dah undi kumpulan.`;
+    async function drawGroup() {
+      const nameInput = document.getElementById("teamName");
+      const name = nameInput.value.trim();
+      if (!name) {
+        result.textContent = "Please enter your team name.";
         return;
       }
 
-      // Random kumpulan
-      const kumpulan = kumpulanList[Math.floor(Math.random() * kumpulanList.length)];
+      // Get existing draws
+      const snapshot = await getDocs(collection(db, "cabutan"));
+      const existing = [];
+      snapshot.forEach(doc => existing.push(doc.data()));
 
-      // Simpan ke Firestore
-      await addDoc(collection(db, "cabutan"), { nama, kumpulan });
-      document.getElementById("hasil").innerText = `Pasukan "${nama}" masuk kumpulan ${kumpulan}`;
-    };
+      const alreadyExists = existing.find(e => e.nama.toLowerCase() === name.toLowerCase());
+      if (alreadyExists) {
+        result.textContent = `Your team is already in Group ${alreadyExists.kumpulan}`;
+        return;
+      }
+
+      // Count how many in each group
+      const count = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
+      existing.forEach(e => count[e.kumpulan]++);
+
+      // Get group with least teams
+      const sorted = groups.sort((a, b) => count[a] - count[b]);
+      const chosenGroup = sorted[0];
+
+      // Save to Firebase
+      await addDoc(collection(db, "cabutan"), {
+        nama: name,
+        kumpulan: chosenGroup
+      });
+
+      result.textContent = `You have been assigned to Group ${chosenGroup}`;
+      nameInput.value = "";
+    }
+
+    drawBtn.addEventListener("click", drawGroup);
   </script>
 </body>
 </html>
