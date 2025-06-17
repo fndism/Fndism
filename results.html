@@ -47,107 +47,125 @@
 <body>
   <h2>Petanque Match Results</h2>
   <div id="groups-container"></div>
+<div class="group-container" id="groupTables"></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+<div class="match-section">
+  <h2 style="text-align:center;">Match Schedule & Results</h2>
+  <table id="matchTable">
+    <thead>
+      <tr><th>Match</th><th>Venue</th><th>Time</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div class="venue-time" id="latestVenueTime"></div>
+</div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
-      authDomain: "unimap-petanque.firebaseapp.com",
-      projectId: "unimap-petanque",
-      storageBucket: "unimap-petanque.appspot.com",
-      messagingSenderId: "578920021890",
-      appId: "1:578920021890:web:987ed2de28e7b0353c999b"
-    };
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const groups = ["A", "B", "C", "D", "E", "F"];
-    const container = document.getElementById("groups-container");
+  const firebaseConfig = {
+    apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
+    authDomain: "unimap-petanque.firebaseapp.com",
+    projectId: "unimap-petanque",
+    storageBucket: "unimap-petanque.appspot.com",
+    messagingSenderId: "578920021890",
+    appId: "1:578920021890:web:987ed2de28e7b0353c999b"
+  };
 
-    async function loadResults() {
-      const teamsSnapshot = await getDocs(collection(db, "teams"));
-      const groupData = {};
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-      teamsSnapshot.forEach(doc => {
-        const team = doc.data();
-        if (!groupData[team.group]) groupData[team.group] = [];
-        groupData[team.group].push(team);
+  const groups = ["A", "B", "C", "D", "E", "F"];
+  const groupTables = document.getElementById("groupTables");
+
+  async function loadTeams() {
+    const snapshot = await getDocs(collection(db, "teams"));
+    const groupMap = {};
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const group = data.group;
+      if (!groupMap[group]) groupMap[group] = [];
+      groupMap[group].push({
+        name: data.teamName,
+        main: data.main || 0,
+        win: data.win || 0,
+        lose: data.lose || 0,
+        pointPlus: data.pointPlus || 0,
+        pointMinus: data.pointMinus || 0
+      });
+    });
+
+    groups.forEach(g => {
+      const teams = groupMap[g] || [];
+      let html = `
+        <div class="group">
+          <h3>Group ${g}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>Play</th>
+                <th>Win</th>
+                <th>Lose</th>
+                <th>Point</th>
+                <th>+Pt</th>
+                <th>-Pt</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      teams.forEach(t => {
+        const point = t.win * 3; // 3 points for win
+        html += `
+          <tr>
+            <td>${t.name}</td>
+            <td>${t.main}</td>
+            <td>${t.win}</td>
+            <td>${t.lose}</td>
+            <td>${point}</td>
+            <td>${t.pointPlus}</td>
+            <td>${t.pointMinus}</td>
+          </tr>
+        `;
       });
 
-      for (let group of groups) {
-        if (!groupData[group]) continue;
-        const teams = groupData[group].sort((a, b) => a.teamName.localeCompare(b.teamName));
+      html += "</tbody></table></div>";
+      groupTables.innerHTML += html;
+    });
+  }
 
-        const tableHTML = `
-          <div class="group-section">
-            <h3>Group ${group}</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Team</th>
-                  <th>Played</th>
-                  <th>Win</th>
-                  <th>Lose</th>
-                  <th>Points</th>
-                  <th>Point +</th>
-                  <th>Point -</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${teams.map(t => `
-                  <tr>
-                    <td>${t.teamName}</td>
-                    <td>${t.played || 0}</td>
-                    <td>${t.win || 0}</td>
-                    <td>${t.lose || 0}</td>
-                    <td>${t.points || 0}</td>
-                    <td>${t.pointPlus || 0}</td>
-                    <td>${t.pointMinus || 0}</td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
+  async function loadMatches() {
+    const matchSnapshot = await getDocs(query(collection(db, "matches"), orderBy("timestamp", "desc")));
+    const matchTable = document.querySelector("#matchTable tbody");
+    const venueTimeDiv = document.getElementById("latestVenueTime");
+    let latestVenue = "", latestTime = "";
 
-            <div class="match-matrix">
-              <table>
-                <thead>
-                  <tr>
-                    <th>TEAM:</th>
-                    ${teams.map(t => `<th>${t.teamName}</th>`).join("")}
-                  </tr>
-                </thead>
-                <tbody>
-                  ${teams.map((rowTeam, i) => `
-                    <tr>
-                      <td>${rowTeam.teamName}</td>
-                      ${teams.map((colTeam, j) => `
-                        <td class="${i === j ? 'matrix-cell red' : ''}"></td>
-                      `).join("")}
-                    </tr>
-                  `).join("")}
-                </tbody>
-              </table>
-            </div>
-
-            <div class="venue-time" id="venue-${group}">Venue: - | Time: -</div>
-          </div>
-        `;
-
-        container.innerHTML += tableHTML;
-
-        // Auto update venue info if available
-        const venueDoc = await getDoc(doc(db, "venues", group));
-        if (venueDoc.exists()) {
-          const venueData = venueDoc.data();
-          document.getElementById(`venue-${group}`).textContent =
-            `Venue: ${venueData.venue || "-"} | Time: ${venueData.time || "-"}`;
-        }
+    matchSnapshot.forEach((doc, index) => {
+      const data = doc.data();
+      if (index === 0) {
+        latestVenue = data.venue;
+        latestTime = data.time;
       }
-    }
+      matchTable.innerHTML += `
+        <tr>
+          <td>${data.match}</td>
+          <td>${data.venue}</td>
+          <td>${data.time}</td>
+        </tr>
+      `;
+    });
 
-    loadResults();
-  </script>
+    if (latestVenue && latestTime) {
+      venueTimeDiv.textContent = `Latest Match - Venue: ${latestVenue}, Time: ${latestTime}`;
+    }
+  }
+
+  loadTeams();
+  loadMatches();
+</script>
+
 </body>
 </html>
