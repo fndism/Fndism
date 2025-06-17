@@ -2,85 +2,97 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Petanque Group Draw</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>UniMAP Petanque Group Draw</title>
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #e0f7fa, #fff);
+      font-family: "Segoe UI", sans-serif;
+      background: #f0f4f8;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-    }
-    .container {
-      text-align: center;
-      background: #fff;
       padding: 2rem;
-      border-radius: 20px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-      max-width: 400px;
-      width: 100%;
-      animation: slideIn 0.5s ease-out;
-    }
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
+      margin: 0;
     }
     h1 {
-      margin-bottom: 1rem;
-      color: #00796b;
+      color: #0066cc;
     }
-    input[type="text"] {
+    .card {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      text-align: center;
       width: 100%;
-      padding: 0.6rem;
-      border: 2px solid #009688;
-      border-radius: 10px;
-      font-size: 1rem;
-      margin-bottom: 1rem;
+      max-width: 420px;
+    }
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      text-transform: uppercase;
     }
     button {
-      background: #009688;
+      padding: 0.75rem 1.5rem;
+      background: #0077cc;
       color: white;
-      padding: 0.7rem 2rem;
       border: none;
-      border-radius: 10px;
-      font-size: 1rem;
+      border-radius: 8px;
+      font-weight: bold;
       cursor: pointer;
-      transition: transform 0.2s, background 0.3s;
+      margin-top: 1rem;
+      transition: transform 0.2s ease;
     }
     button:hover {
-      background: #00796b;
+      background: #005fa3;
       transform: scale(1.05);
     }
-    #result {
+    .result {
       margin-top: 1.5rem;
       font-size: 1.2rem;
-      font-weight: bold;
-      color: #004d40;
-      min-height: 1.5em;
+    }
+    .note {
+      margin-top: 2rem;
+      font-size: 0.9rem;
+      text-align: left;
+      background: #e0f0ff;
+      border-left: 5px solid #0077cc;
+      padding: 1rem;
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Petanque Group Draw</h1>
-    <input type="text" id="teamName" placeholder="Enter your team name" />
-    <button id="drawBtn">Draw Group</button>
-    <div id="result"></div>
+  <div class="card">
+    <h1>Group Draw</h1>
+    <input type="text" id="player1" placeholder="Player 1 Name" oninput="toUpperCase(this)" />
+    <input type="text" id="player2" placeholder="Player 2 Name" oninput="toUpperCase(this)" />
+    <button onclick="drawGroup()">🎯 Draw Group</button>
+    <div class="result" id="resultMsg"></div>
+
+    <div class="note">
+      <strong>IMPORTANT:</strong>
+      <ol>
+        <li>Player names must be full names. Example: <b>ALI BIN ABU</b></li>
+        <li>Each team is allowed to draw a group <b>only once</b>.</li>
+        <li>The decision is <b>final and cannot be changed</b>.</li>
+      </ol>
+    </div>
   </div>
 
+  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyD3HWMOc1ShuEwEGRnQNoXPj-FEmHpDPFI",
+      apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
       authDomain: "unimap-petanque.firebaseapp.com",
       projectId: "unimap-petanque",
-      storageBucket: "unimap-petanque.firebasestorage.app",
+      storageBucket: "unimap-petanque.appspot.com",
       messagingSenderId: "578920021890",
       appId: "1:578920021890:web:987ed2de28e7b0353c999b"
     };
@@ -88,49 +100,85 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const drawBtn = document.getElementById("drawBtn");
-    const result = document.getElementById("result");
-
     const groups = ["A", "B", "C", "D", "E", "F"];
+    const groupLimit = 5;
 
-    async function drawGroup() {
-      const nameInput = document.getElementById("teamName");
-      const name = nameInput.value.trim();
-      if (!name) {
-        result.textContent = "Please enter your team name.";
-        return;
-      }
+    async function getAvailableGroup() {
+      const teamsSnapshot = await getDocs(collection(db, "teams"));
+      const groupCounts = {};
 
-      // Get existing draws
-      const snapshot = await getDocs(collection(db, "cabutan"));
-      const existing = [];
-      snapshot.forEach(doc => existing.push(doc.data()));
-
-      const alreadyExists = existing.find(e => e.nama.toLowerCase() === name.toLowerCase());
-      if (alreadyExists) {
-        result.textContent = `Your team is already in Group ${alreadyExists.kumpulan}`;
-        return;
-      }
-
-      // Count how many in each group
-      const count = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
-      existing.forEach(e => count[e.kumpulan]++);
-
-      // Get group with least teams
-      const sorted = groups.sort((a, b) => count[a] - count[b]);
-      const chosenGroup = sorted[0];
-
-      // Save to Firebase
-      await addDoc(collection(db, "cabutan"), {
-        nama: name,
-        kumpulan: chosenGroup
+      teamsSnapshot.forEach((doc) => {
+        const team = doc.data();
+        if (!groupCounts[team.group]) groupCounts[team.group] = 0;
+        groupCounts[team.group]++;
       });
 
-      result.textContent = `You have been assigned to Group ${chosenGroup}`;
-      nameInput.value = "";
+      const availableGroups = groups.filter(g => (groupCounts[g] || 0) < groupLimit);
+      if (availableGroups.length === 0) return null;
+
+      // Shuffle to randomize group
+      const shuffled = availableGroups.sort(() => 0.5 - Math.random());
+      const selectedGroup = shuffled[0];
+      const groupNumber = (groupCounts[selectedGroup] || 0) + 1;
+
+      return {
+        name: selectedGroup + groupNumber,
+        group: selectedGroup
+      };
     }
 
-    drawBtn.addEventListener("click", drawGroup);
+    async function drawGroup() {
+      const p1 = document.getElementById("player1").value.trim().toUpperCase();
+      const p2 = document.getElementById("player2").value.trim().toUpperCase();
+      const resultDiv = document.getElementById("resultMsg");
+
+      if (!p1 || !p2) {
+        resultDiv.textContent = "❗ Please enter both player names.";
+        resultDiv.style.color = "red";
+        return;
+      }
+
+      // Check if already exists
+      const teamsRef = collection(db, "teams");
+      const teamsSnapshot = await getDocs(teamsRef);
+      const alreadyExists = teamsSnapshot.docs.some(doc => {
+        const data = doc.data();
+        return (data.player1 === p1 && data.player2 === p2) || (data.player1 === p2 && data.player2 === p1);
+      });
+
+      if (alreadyExists) {
+        resultDiv.textContent = "⚠️ This team has already drawn a group.";
+        resultDiv.style.color = "red";
+        return;
+      }
+
+      const group = await getAvailableGroup();
+      if (!group) {
+        resultDiv.textContent = "❌ All groups are full.";
+        resultDiv.style.color = "red";
+        return;
+      }
+
+      await addDoc(teamsRef, {
+        player1: p1,
+        player2: p2,
+        group: group.group,
+        teamName: group.name,
+        timestamp: new Date()
+      });
+
+      resultDiv.textContent = `✅ Your team is assigned to Group ${group.name}`;
+      resultDiv.style.color = "green";
+      document.querySelector("button").disabled = true;
+    }
+
+    // Expose function globally
+    window.drawGroup = drawGroup;
+
+    // Auto uppercase
+    window.toUpperCase = function(input) {
+      input.value = input.value.toUpperCase();
+    };
   </script>
 </body>
 </html>
