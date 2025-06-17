@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Senarai Kumpulan Petanque UniMAP</title>
+</head>
+<body>
+  <h1>Senarai Kumpulan Kejohanan Petanque UniMAP</h1>
+  <div id="kumpulan-container"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
+      authDomain: "unimap-petanque.firebaseapp.com",
+      projectId: "unimap-petanque",
+      storageBucket: "unimap-petanque.firebasestorage.app",
+      messagingSenderId: "578920021890",
+      appId: "1:578920021890:web:987ed2de28e7b0353c999b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const container = document.getElementById("kumpulan-container");
+
+    const kumpulanData = {
+      A: [], B: [], C: [], D: [], E: [], F: []
+    };
+
+    const snapshot = await getDocs(collection(db, "cabutan"));
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (kumpulanData[data.kumpulan]) {
+        kumpulanData[data.kumpulan].push(data.nama);
+      }
+    });
+
+    // Papar kumpulan dan senarai pasukan
+    for (const [kumpulan, senarai] of Object.entries(kumpulanData)) {
+      const div = document.createElement("div");
+      div.innerHTML = `<h2>Kumpulan ${kumpulan}</h2><ul>${senarai.map(n => `<li>${n}</li>`).join("")}</ul>`;
+      container.appendChild(div);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cabutan Undi Petanque UniMAP</title>
+</head>
+<body>
+  <h1>Cabutan Undi Kumpulan</h1>
+  <input type="text" id="pasukan" placeholder="Nama Pasukan">
+  <button id="cabutUndi">Cabut Undi</button>
+
+  <h2 id="hasil"></h2>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
+      authDomain: "unimap-petanque.firebaseapp.com",
+      projectId: "unimap-petanque",
+      storageBucket: "unimap-petanque.firebasestorage.app",
+      messagingSenderId: "578920021890",
+      appId: "1:578920021890:web:987ed2de28e7b0353c999b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const kumpulanList = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+    document.getElementById("cabutUndi").onclick = async () => {
+      const nama = document.getElementById("pasukan").value.trim();
+      if (!nama) return alert("Sila isi nama pasukan.");
+
+      // Semak jika pasukan dah undi
+      const q = query(collection(db, "cabutan"), where("nama", "==", nama));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        document.getElementById("hasil").innerText = `Pasukan "${nama}" dah undi kumpulan.`;
+        return;
+      }
+
+      // Random kumpulan
+      const kumpulan = kumpulanList[Math.floor(Math.random() * kumpulanList.length)];
+
+      // Simpan ke Firestore
+      await addDoc(collection(db, "cabutan"), { nama, kumpulan });
+      document.getElementById("hasil").innerText = `Pasukan "${nama}" masuk kumpulan ${kumpulan}`;
+    };
+  </script>
+</body>
+</html>
