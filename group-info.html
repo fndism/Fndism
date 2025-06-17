@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Group Info - UniMAP Petanque</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background-color: #3498db;
+      color: white;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #555;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Group Info</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Team Name</th>
+          <th>Group</th>
+          <th>Player 1</th>
+          <th>Player 2</th>
+        </tr>
+      </thead>
+      <tbody id="teamTable">
+        <!-- Rows will be inserted here -->
+      </tbody>
+    </table>
+    <button onclick="location.href='admin.html'">⬅ Back to Admin Menu</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
+      authDomain: "unimap-petanque.firebaseapp.com",
+      projectId: "unimap-petanque",
+      storageBucket: "unimap-petanque.appspot.com",
+      messagingSenderId: "578920021890",
+      appId: "1:578920021890:web:987ed2de28e7b0353c999b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function loadTeams() {
+      const tableBody = document.getElementById("teamTable");
+      tableBody.innerHTML = "";
+
+      const querySnapshot = await getDocs(collection(db, "teams"));
+      const teams = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        teams.push({
+          teamName: data.teamName || "-",
+          group: data.group || "-",
+          player1: data.player1 || "-",
+          player2: data.player2 || "-"
+        });
+      });
+
+      // Sort by group, then team name
+      teams.sort((a, b) => {
+        if (a.group === b.group) return a.teamName.localeCompare(b.teamName);
+        return a.group.localeCompare(b.group);
+      });
+
+      for (const team of teams) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${team.teamName}</td>
+          <td>${team.group}</td>
+          <td>${team.player1}</td>
+          <td>${team.player2}</td>
+        `;
+        tableBody.appendChild(row);
+      }
+    }
+
+    loadTeams();
+  </script>
+</body>
+</html>
