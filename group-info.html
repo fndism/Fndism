@@ -2,77 +2,58 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Group Info - UniMAP Petanque</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin - Group Info</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f0f4f8;
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 1000px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 2rem;
+      background: #f0f0f0;
     }
     h1 {
-      text-align: center;
-      color: #2c3e50;
+      color: #0066cc;
     }
     table {
-      width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      width: 100%;
+      background: white;
     }
     th, td {
       padding: 10px;
       border: 1px solid #ccc;
       text-align: left;
     }
-    th {
-      background-color: #3498db;
-      color: white;
-    }
     button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background: #555;
-      color: white;
-      border: none;
-      border-radius: 5px;
+      margin: 2px;
+      padding: 5px 10px;
       cursor: pointer;
     }
-    button:hover {
-      background: #333;
+    input[type="text"] {
+      width: 90%;
+      padding: 5px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Group Info</h1>
-    <table>
-      <thead>
-        <tr>
-          <th>Team Name</th>
-          <th>Group</th>
-          <th>Player 1</th>
-          <th>Player 2</th>
-        </tr>
-      </thead>
-      <tbody id="teamTable">
-        <!-- Rows will be inserted here -->
-      </tbody>
-    </table>
-    <button onclick="location.href='admin.html'">⬅ Back to Admin Menu</button>
-  </div>
+  <h1>Admin - Group Info</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Player 1</th>
+        <th>Player 2</th>
+        <th>Team</th>
+        <th>Group</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="teamTable"></tbody>
+  </table>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+    import {
+      getFirestore, collection, getDocs, doc, updateDoc, deleteDoc
+    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
@@ -86,38 +67,42 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    const tableBody = document.getElementById("teamTable");
+
     async function loadTeams() {
-      const tableBody = document.getElementById("teamTable");
       tableBody.innerHTML = "";
-
-      const querySnapshot = await getDocs(collection(db, "teams"));
-      const teams = [];
-
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        teams.push({
-          teamName: data.teamName || "-",
-          group: data.group || "-",
-          player1: data.player1 || "-",
-          player2: data.player2 || "-"
-        });
-      });
-
-      // Sort by group, then team name
-      teams.sort((a, b) => {
-        if (a.group === b.group) return a.teamName.localeCompare(b.teamName);
-        return a.group.localeCompare(b.group);
-      });
-
-      for (const team of teams) {
+      const snapshot = await getDocs(collection(db, "teams"));
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
         const row = document.createElement("tr");
+
         row.innerHTML = `
-          <td>${team.teamName}</td>
-          <td>${team.group}</td>
-          <td>${team.player1}</td>
-          <td>${team.player2}</td>
+          <td><input type="text" value="${data.player1}" id="p1-${docSnap.id}"/></td>
+          <td><input type="text" value="${data.player2}" id="p2-${docSnap.id}"/></td>
+          <td>${data.teamName}</td>
+          <td>${data.group}</td>
+          <td>
+            <button onclick="updateTeam('${docSnap.id}')">Update</button>
+            <button onclick="deleteTeam('${docSnap.id}')">Delete</button>
+          </td>
         `;
         tableBody.appendChild(row);
+      });
+    }
+
+    window.updateTeam = async function(id) {
+      const p1 = document.getElementById(`p1-${id}`).value.trim();
+      const p2 = document.getElementById(`p2-${id}`).value.trim();
+      await updateDoc(doc(db, "teams", id), { player1: p1, player2: p2 });
+      alert("✅ Team updated");
+      loadTeams();
+    }
+
+    window.deleteTeam = async function(id) {
+      if (confirm("⚠️ Delete this team?")) {
+        await deleteDoc(doc(db, "teams", id));
+        alert("🗑️ Team deleted");
+        loadTeams();
       }
     }
 
