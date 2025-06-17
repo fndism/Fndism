@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Petanque Match Results</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f0f4f8;
+      padding: 2rem;
+    }
+    h2 {
+      text-align: center;
+      color: #0066cc;
+    }
+    .group-section {
+      margin-bottom: 3rem;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+      text-align: center;
+    }
+    th {
+      background-color: #e0f0ff;
+    }
+    .matrix-cell.red {
+      background-color: red;
+    }
+    .match-matrix {
+      overflow-x: auto;
+      margin-top: 1rem;
+    }
+    .venue-time {
+      margin-top: 1rem;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+  <h2>Petanque Match Results</h2>
+  <div id="groups-container"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
+      authDomain: "unimap-petanque.firebaseapp.com",
+      projectId: "unimap-petanque",
+      storageBucket: "unimap-petanque.appspot.com",
+      messagingSenderId: "578920021890",
+      appId: "1:578920021890:web:987ed2de28e7b0353c999b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const groups = ["A", "B", "C", "D", "E", "F"];
+    const container = document.getElementById("groups-container");
+
+    async function loadResults() {
+      const teamsSnapshot = await getDocs(collection(db, "teams"));
+      const groupData = {};
+
+      teamsSnapshot.forEach(doc => {
+        const team = doc.data();
+        if (!groupData[team.group]) groupData[team.group] = [];
+        groupData[team.group].push(team);
+      });
+
+      for (let group of groups) {
+        if (!groupData[group]) continue;
+        const teams = groupData[group].sort((a, b) => a.teamName.localeCompare(b.teamName));
+
+        const tableHTML = `
+          <div class="group-section">
+            <h3>Group ${group}</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Team</th>
+                  <th>Played</th>
+                  <th>Win</th>
+                  <th>Lose</th>
+                  <th>Points</th>
+                  <th>Point +</th>
+                  <th>Point -</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${teams.map(t => `
+                  <tr>
+                    <td>${t.teamName}</td>
+                    <td>${t.played || 0}</td>
+                    <td>${t.win || 0}</td>
+                    <td>${t.lose || 0}</td>
+                    <td>${t.points || 0}</td>
+                    <td>${t.pointPlus || 0}</td>
+                    <td>${t.pointMinus || 0}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+
+            <div class="match-matrix">
+              <table>
+                <thead>
+                  <tr>
+                    <th>TEAM:</th>
+                    ${teams.map(t => `<th>${t.teamName}</th>`).join("")}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${teams.map((rowTeam, i) => `
+                    <tr>
+                      <td>${rowTeam.teamName}</td>
+                      ${teams.map((colTeam, j) => `
+                        <td class="${i === j ? 'matrix-cell red' : ''}"></td>
+                      `).join("")}
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="venue-time" id="venue-${group}">Venue: - | Time: -</div>
+          </div>
+        `;
+
+        container.innerHTML += tableHTML;
+
+        // Auto update venue info if available
+        const venueDoc = await getDoc(doc(db, "venues", group));
+        if (venueDoc.exists()) {
+          const venueData = venueDoc.data();
+          document.getElementById(`venue-${group}`).textContent =
+            `Venue: ${venueData.venue || "-"} | Time: ${venueData.time || "-"}`;
+        }
+      }
+    }
+
+    loadResults();
+  </script>
+</body>
+</html>
