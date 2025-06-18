@@ -2,79 +2,295 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Update Match Results - Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Update Petanque Results</title>
   <style>
     body {
-      font-family: "Segoe UI", sans-serif;
-      background: #f7f9fc;
-      margin: 0;
-      padding: 2rem;
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+      padding: 20px;
+      min-height: 100vh; /* Pastikan body mengambil tinggi viewport penuh untuk posisi footer */
+      display: flex;
+      flex-direction: column;
+    }
+    h1 {
+      text-align: center;
+      color: #343a40;
+      margin-bottom: 30px;
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-content: center; /* Pusatkan tab */
+    }
+    .tab {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+    .tab:hover {
+      background: #0056b3;
+    }
+    .tab.active {
+      background: #0056b3;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .tab-content {
+      display: none;
+      padding: 15px;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      flex-grow: 1;
+    }
+    .tab-content.active {
+      display: block;
     }
     h2 {
-      margin-top: 3rem;
-      color: #333;
+      color: #007bff;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 5px;
+      margin-top: 25px;
+      margin-bottom: 15px;
     }
     table {
-      border-collapse: collapse;
-      margin-bottom: 1rem;
       width: 100%;
-      max-width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     th, td {
       border: 1px solid #ccc;
       text-align: center;
-      padding: 0.5rem;
+      padding: 10px;
     }
-    input[type="text"], input[type="number"] {
-      width: 60px;
-      padding: 0.3rem;
-      text-align: center;
-    }
-    .group-block {
-      border: 1px solid #ddd;
-      padding: 1rem;
-      margin-bottom: 2rem;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .group-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-    .venue-input {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-    button {
-      padding: 0.6rem 1.2rem;
-      background: #0077cc;
-      color: white;
-      border: none;
-      border-radius: 5px;
+    th {
+      background: #e9ecef;
+      color: #343a40;
       font-weight: bold;
-      cursor: pointer;
-      margin-top: 1rem;
     }
-    button:hover {
-      background: #005fa3;
+    tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+    .match-matrix-table td.empty-cell {
+        background-color: #eee;
+    }
+    .match-matrix-table td.score-cell {
+        font-weight: bold;
+        color: #0056b3;
+    }
+
+    /* Input styling for scores */
+    .score-input {
+        width: 60px;
+        text-align: center;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 5px;
+        margin: 0 5px;
+    }
+    .save-button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-left: 10px;
+        transition: background-color 0.3s ease;
+    }
+    .save-button:hover {
+        background-color: #218838;
+    }
+    .match-edit-controls {
+        margin-top: 10px;
+        text-align: right; /* Untuk butang save keseluruhan kumpulan */
+    }
+
+    /* --- Knockout Bracket Styling --- */
+    .tournament-bracket {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* QF, SF, Final */
+        gap: 10px;
+        max-width: 900px; /* Lebar maksimum untuk bracket */
+        margin: 20px auto;
+        padding: 20px;
+        background: #fdfdfd;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    .bracket-stage {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around; /* Sebarkan perlawanan secara merata secara default */
+        padding: 10px 0;
+    }
+    .bracket-stage.quarter-finals-stage {
+        grid-column: 1 / 2; /* Kolom pertama */
+    }
+    .bracket-stage.semi-finals-stage {
+        grid-column: 2 / 3; /* Kolom kedua */
+        justify-content: center; /* PERBAIKI ALIGNMENT: Pusatkan konten secara vertikal untuk semi-final */
+    }
+    .bracket-stage.final-stage {
+        grid-column: 3 / 4; /* Kolom ketiga */
+        justify-content: center; /* Pusatkan perlawanan final */
+    }
+
+    .bracket-match {
+        background: #e9f5ff; /* Biru muda untuk kotak perlawanan */
+        border: 1px solid #cceeff;
+        border-radius: 8px;
+        padding: 10px;
+        margin: 10px 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        position: relative; /* Untuk garis penghubung */
+        min-height: 80px; /* Pastikan tinggi konsisten */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .bracket-match .teams {
+        font-weight: bold;
+        color: #333;
+        font-size: 0.95em;
+    }
+    .bracket-match .score {
+      font-weight: bold;
+      color: #dc3545;
+      font-size: 0.9em;
+      margin-top: 5px;
+      display: flex; /* Gunakan flexbox untuk skor dan input */
+      justify-content: center;
+      align-items: center;
+    }
+    .bracket-match .venue-time {
+        font-size: 0.8em;
+        color: #666;
+        margin-top: 5px;
+    }
+
+    /* Garis Penghubung */
+    .bracket-match::after, .bracket-match::before {
+        content: '';
+        position: absolute;
+        background: #999;
+        z-index: 1;
+    }
+    .bracket-stage.quarter-finals-stage .bracket-match::after {
+        top: 50%;
+        right: -5px; /* Menghubungkan ke batas container tahap berikutnya */
+        width: 5px;
+        height: 1px;
+        transform: translateY(-50%);
+    }
+    .bracket-stage.semi-finals-stage .bracket-match::after {
+        top: 50%;
+        right: -5px;
+        width: 5px;
+        height: 1px;
+        transform: translateY(-50%);
+    }
+
+    /* Konektor vertikal untuk SF ke Final */
+    .bracket-stage.semi-finals-stage .bracket-match:first-child::before {
+        content: '';
+        position: absolute;
+        bottom: -15px; /* Sesuaikan berdasarkan spasi perlawanan */
+        left: 50%;
+        width: 1px;
+        height: 30px; /* Panjang garis vertikal */
+        background: #999;
+        transform: translateX(-50%);
+        z-index: 0;
+    }
+    
+    /* Sembunyikan garis untuk pesan placeholder/kosong */
+    .bracket-match.no-data-message::after,
+    .bracket-match.no-data-message::before {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .tournament-bracket {
+            grid-template-columns: 1fr; /* Tumpuk kolom di layar yang lebih kecil */
+        }
+        .bracket-stage {
+            border-bottom: 1px solid #eee; /* Pisahkan tahap */
+            margin-bottom: 10px;
+        }
+        .bracket-stage:last-child {
+            border-bottom: none;
+        }
+        .bracket-match::after,
+        .bracket-match::before,
+        .semi-finals-stage .bracket-match::before {
+            display: none; /* Sembunyikan garis di mobile */
+        }
+    }
+
+    /* Styling Footer */
+    .footer {
+        margin-top: auto; /* Dorong footer ke bawah */
+        padding-top: 20px;
+        text-align: center;
+        font-size: 0.9em;
+        color: #777;
     }
   </style>
 </head>
 <body>
-  <h1>Admin: Update Match Results</h1>
-  <div id="groupContainer"></div>
+  <h1>SMZ18201: Petanque Match Results (Update)</h1>
 
-  <!-- Firebase SDK -->
+  <div class="tabs">
+    <div class="tab active" onclick="window.switchTab('groupStage')">Group Stage</div>
+    <div class="tab" onclick="window.switchTab('nextStage')">Next Stage</div>
+    <div class="tab" onclick="window.location.href='index.html'">⬅ Homepage</div>
+  </div>
+
+  <!-- Konten Tahap Grup - sekarang aktif secara default -->
+  <div id="groupStage" class="tab-content active">
+    <!-- Tabel Kedudukan Tim dihapus dari halaman ini -->
+    <h2>Match Details</h2>
+    <div id="matchMatrix">Loading match details...</div>
+  </div>
+
+  <!-- Konten Tahap Selanjutnya - sekarang tidak aktif secara default -->
+  <div id="nextStage" class="tab-content">
+    <!-- Container Bracket Turnamen -->
+    <div class="tournament-bracket">
+        <div class="bracket-stage quarter-finals-stage">
+            <h2>Quarter Final</h2>
+            <div id="quarterFinals">Loading Quarter Final matches...</div>
+        </div>
+
+        <div class="bracket-stage semi-finals-stage">
+            <h2>Semi Final</h2>
+            <div id="semiFinals">Loading Semi Final matches...</div>
+        </div>
+
+        <div class="bracket-stage final-stage">
+            <h2>Final</h2>
+            <div id="finalMatch">Loading Final match...</div>
+        </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>&copy; 2025 Fndism. All rights reserved.</p>
+  </div>
+
   <script type="module">
+    // Konfigurasi dan inisialisasi Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import {
-      getFirestore, collection, getDocs, setDoc, doc
-    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js"; 
 
     const firebaseConfig = {
       apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
@@ -88,100 +304,526 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // Definisikan array grup
     const groups = ["A", "B", "C", "D", "E", "F"];
 
-    async function loadGroups() {
-      const teamsSnapshot = await getDocs(collection(db, "teams"));
-      const teams = {};
-
-      teamsSnapshot.forEach(doc => {
-        const data = doc.data();
-        const group = data.group;
-        if (!teams[group]) teams[group] = [];
-        teams[group].push(data.teamName);
-      });
-
-      const container = document.getElementById("groupContainer");
-      container.innerHTML = "";
-
-      for (let group of groups) {
-        const teamList = teams[group] || [];
-        teamList.sort();
-
-        const block = document.createElement("div");
-        block.className = "group-block";
-
-        const header = document.createElement("div");
-        header.className = "group-header";
-        header.innerHTML = `<h2>Group ${group}</h2>`;
-
-        const venueInput = document.createElement("div");
-        venueInput.className = "venue-input";
-        venueInput.innerHTML = `
-          <input type="text" id="venue-${group}" placeholder="Venue" />
-          <input type="text" id="time-${group}" placeholder="Time" />
-        `;
-
-        const table = document.createElement("table");
-        const thead = document.createElement("thead");
-        const tbody = document.createElement("tbody");
-
-        const headRow = document.createElement("tr");
-        headRow.innerHTML = `<th></th>` + teamList.map(name => `<th>${name}</th>`).join("");
-        thead.appendChild(headRow);
-
-        teamList.forEach(rowTeam => {
-          const row = document.createElement("tr");
-          row.innerHTML = `<th>${rowTeam}</th>` + teamList.map(colTeam => {
-            if (rowTeam === colTeam) {
-              return `<td style="background:#eee;"></td>`;
-            } else {
-              return `<td><input type="text" id="score-${group}-${rowTeam}-${colTeam}" placeholder="e.g. 13-6" /></td>`;
-            }
-          }).join("");
-          tbody.appendChild(row);
-        });
-
-        table.appendChild(thead);
-        table.appendChild(tbody);
-
-        const saveBtn = document.createElement("button");
-        saveBtn.textContent = "Save Group " + group;
-        saveBtn.onclick = async () => {
-          const matchData = {
-            venue: document.getElementById(`venue-${group}`).value,
-            time: document.getElementById(`time-${group}`).value,
-            matches: {}
-          };
-
-          teamList.forEach(rowTeam => {
-            teamList.forEach(colTeam => {
-              if (rowTeam !== colTeam) {
-                const input = document.getElementById(`score-${group}-${rowTeam}-${colTeam}`);
-                const score = input?.value.trim();
-                if (score) {
-                  matchData.matches[`${rowTeam}_vs_${colTeam}`] = score;
-                }
-              }
-            });
-          });
-
-          await setDoc(doc(db, "matchResults", group), matchData);
-          alert(`Group ${group} match results saved.`);
-        };
-
-        block.appendChild(header);
-        block.appendChild(venueInput);
-        block.appendChild(table);
-        block.appendChild(saveBtn);
-        container.appendChild(block);
+    // Jadikan switchTab dapat diakses secara global
+    window.switchTab = function(tabId) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      // Temukan elemen tab berdasarkan atribut onclick-nya untuk menerapkan kelas aktif
+      const targetTabElement = document.querySelector(`.tab[onclick*="switchTab('${tabId}')"]`);
+      // Penanganan khusus untuk tab Homepage karena menggunakan window.location.href
+      if (tabId === 'homepage') {
+          document.querySelector(`.tab[onclick*="window.location.href='index.html'"]`).classList.add('active');
+      } else if (targetTabElement) {
+          targetTabElement.classList.add('active');
       }
+      document.getElementById(tabId).classList.add('active');
     }
 
-    loadGroups();
+    // Fungsi pembantu untuk membandingkan kedudukan tim untuk penyortiran.
+    function compareTeamStandings(a, b) {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.difference !== a.difference) return b.difference - a.difference;
+        if (b.scoreFor !== a.scoreFor) return b.scoreFor - a.scoreFor;
+        return a.teamName.localeCompare(b.teamName);
+    }
+
+    // Mengambil dan memproses semua data tahap grup
+    async function getGroupStageData() {
+        const result = {
+            standingsByGroup: {},
+            matchesByGroup: {},
+            teamsByGroup: {}
+        };
+
+        const teamsSnapshot = await getDocs(collection(db, "teams"));
+        teamsSnapshot.forEach(doc => {
+            const data = doc.data();
+            const group = data.group;
+            const teamName = data.teamName;
+            if (group && teamName) {
+                if (!result.teamsByGroup[group]) result.teamsByGroup[group] = [];
+                result.teamsByGroup[group].push(teamName);
+            }
+        });
+
+        for (const group of groups) {
+            const groupDocRef = doc(db, "matchResults", group);
+            const groupDocSnap = await getDoc(groupDocRef);
+
+            const groupTeams = result.teamsByGroup[group] || [];
+            groupTeams.sort();
+
+            const standings = {};
+            groupTeams.forEach(teamName => {
+                standings[teamName] = {
+                    teamName: teamName,
+                    played: 0, wins: 0, losses: 0, draws: 0,
+                    points: 0, scoreFor: 0, scoreAgainst: 0, difference: 0
+                };
+            });
+
+            if (groupDocSnap.exists() && groupDocSnap.data().matches) {
+                const matches = groupDocSnap.data().matches;
+                result.matchesByGroup[group] = matches;
+                
+                for (const matchKey in matches) {
+                    if (matches.hasOwnProperty(matchKey)) {
+                        const scoreStr = matches[matchKey];
+                        const parts = matchKey.replace(/_/g, ' ').split(' vs ');
+                        let teamA = parts[0] ? parts[0].trim() : null;
+                        let teamB = parts[1] ? parts[1].trim() : null;
+
+                        if (!teamA || !teamB || !standings[teamA] || !standings[teamB]) {
+                            console.warn(`Melewatkan pertandingan ${matchKey} di grup ${group}: Data tim tidak ditemukan atau tidak valid.`);
+                            continue;
+                        }
+
+                        const scoreParts = scoreStr.split('-');
+                        if (scoreParts.length === 2) {
+                            let scoreA = parseInt(scoreParts[0]);
+                            let scoreB = parseInt(scoreParts[1]);
+
+                            if (!isNaN(scoreA) && !isNaN(scoreB)) {
+                                standings[teamA].played++; standings[teamB].played++;
+                                standings[teamA].scoreFor += scoreA; standings[teamA].scoreAgainst += scoreB;
+                                standings[teamB].scoreFor += scoreB; standings[teamB].scoreAgainst += scoreA;
+
+                                if (scoreA > scoreB) {
+                                    standings[teamA].wins++; standings[teamB].losses++; standings[teamA].points += 3;
+                                } else if (scoreB > scoreA) {
+                                    standings[teamB].wins++; standings[teamA].losses++; standings[teamB].points += 3;
+                                } else {
+                                    standings[teamA].draws++; standings[teamB].draws++;
+                                    standings[teamA].points += 1; standings[teamB].points += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            let sortedStandings = Object.values(standings).map(teamStat => {
+                teamStat.difference = teamStat.scoreFor - teamStat.scoreAgainst;
+                return teamStat;
+            }).sort(compareTeamStandings);
+
+            result.standingsByGroup[group] = sortedStandings;
+        }
+        return result;
+    }
+
+    // Mengambil dan menampilkan data untuk Tahap Selanjutnya (Quarter, Semi, Final).
+    async function fetchNextStageData() {
+        try {
+            const { standingsByGroup } = await getGroupStageData();
+
+            let groupWinners = [];
+            let allRunnersUp = [];
+
+            for (const group of groups) {
+                const groupStandings = standingsByGroup[group];
+                if (groupStandings && groupStandings.length >= 1) {
+                    groupWinners.push(groupStandings[0]);
+                    if (groupStandings.length >= 2) {
+                        allRunnersUp.push(groupStandings[1]);
+                    }
+                }
+            }
+
+            allRunnersUp.sort(compareTeamStandings);
+            const top2RunnersUp = allRunnersUp.slice(0, 2);
+
+            let qualifiers = [...groupWinners, ...top2RunnersUp];
+            qualifiers.sort(compareTeamStandings);
+
+            // Mengambil hasil pertandingan knockout yang sebenarnya jika ada (untuk SF/Final)
+            const knockoutMatches = {
+                quarter_finals: await getDocs(collection(db, "knockoutMatches", "quarter_finals", "matches")),
+                semi_finals: await getDocs(collection(db, "knockoutMatches", "semi_finals", "matches")),
+                final: await getDocs(collection(db, "knockoutMatches", "final", "matches"))
+            };
+
+            // --- Quarter Finals ---
+            let qfHtml = "";
+            const qfLabels = ["QF1", "QF2", "QF3", "QF4"];
+            if (qualifiers.length >= 8) {
+                // Pasangan: Peringkat 1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6
+                const qfPairings = [
+                    { teamA: qualifiers[0], teamB: qualifiers[7] },
+                    { teamA: qualifiers[3], teamB: qualifiers[4] },
+                    { teamA: qualifiers[1], teamB: qualifiers[6] },
+                    { teamA: qualifiers[2], teamB: qualifiers[5] }
+                ];
+
+                qfPairings.forEach((pairing, index) => {
+                    const label = qfLabels[index]; // Ambil label spesifik
+                    let scoreA = '';
+                    let scoreB = '';
+                    let venue = "TBD";
+                    let time = "TBD";
+                    let matchId = `QF${index + 1}_${pairing.teamA.teamName.replace(/\s/g, '_')}_vs_${pairing.teamB.teamName.replace(/\s/g, '_')}`; // ID unik untuk input
+
+                    // Coba temukan hasil pertandingan yang sebenarnya
+                    let docFound = false;
+                    knockoutMatches.quarter_finals.forEach(doc => {
+                        const match = doc.data();
+                        // Periksa apakah nama tim cocok, terlepas dari urutan
+                        const teamMatch1 = (match.teamA === pairing.teamA.teamName && match.teamB === pairing.teamB.teamName);
+                        const teamMatch2 = (match.teamA === pairing.teamB.teamName && match.teamB === pairing.teamA.teamName);
+                        
+                        if (teamMatch1 || teamMatch2) {
+                            scoreA = match.scoreA !== undefined ? match.scoreA : '';
+                            scoreB = match.scoreB !== undefined ? match.scoreB : '';
+                            venue = match.venue || "TBD";
+                            time = match.time || "TBD";
+                            docFound = true;
+                            // Rekonstruksi matchId agar sesuai dengan dokumen yang disimpan di Firestore
+                            matchId = doc.id; // Gunakan ID dokumen yang sebenarnya dari Firestore
+                        }
+                    });
+
+                    qfHtml += `<div class="bracket-match">
+                                    <p class="teams">${label}: ${pairing.teamA.teamName} vs ${pairing.teamB.teamName}</p>
+                                    <p class="score">Score: 
+                                        <input type="number" id="${matchId}_scoreA" class="score-input" value="${scoreA}" min="0"> - 
+                                        <input type="number" id="${matchId}_scoreB" class="score-input" value="${scoreB}" min="0">
+                                    </p>
+                                    <p class="venue-time">Venue: ${venue}, Time: ${time}</p>
+                                    <div class="match-edit-controls">
+                                        <button class="save-button" onclick="window.saveKnockoutMatch('quarter_finals', '${matchId}', '${pairing.teamA.teamName}', '${pairing.teamB.teamName}')">Save</button>
+                                    </div>
+                                </div>`;
+                });
+            } else {
+                // Hasilkan pertandingan QF default meskipun kualifikasi tidak cukup
+                qfLabels.forEach(label => {
+                    // Buat ID placeholder untuk pertandingan TBD jika diperlukan untuk konsistensi, meskipun save tidak akan berfungsi tanpa tim yang sebenarnya
+                    const matchId = `${label}_TBD_vs_TBD`; 
+                    qfHtml += `<div class="bracket-match no-data-message">
+                                <p class="teams">${label}: TBD vs TBD</p>
+                                <p class="score">Score: 
+                                    <input type="number" id="${matchId}_scoreA" class="score-input" value="" min="0"> - 
+                                    <input type="number" id="${matchId}_scoreB" class="score-input" value="" min="0">
+                                </p>
+                                <p class="venue-time">Venue: TBD, Time: TBD</p>
+                                <div class="match-edit-controls">
+                                    <button class="save-button" disabled>Save</button>
+                                </div>
+                            </div>`;
+                });
+                qfHtml += `<div class="bracket-match no-data-message" style="margin-top: 10px;"><p>Only ${qualifiers.length}/8 teams qualified so far.</p></div>`; // Pesan terkonsolidasi
+            }
+            document.getElementById('quarterFinals').innerHTML = qfHtml;
+
+            // --- Semi Finals ---
+            let sfHtml = "";
+            const sfLabels = ["SF1", "SF2"];
+            // Pasangan Semi Final default jika tidak ada data aktual
+            const defaultSfPairings = [
+                { teamA: "Winner QF1", teamB: "Winner QF2" },
+                { teamA: "Winner QF3", teamB: "Winner QF4" }
+            ];
+
+            // Pastikan dua kotak pertandingan selalu dirender untuk Semi Final
+            const semiFinalDocs = [];
+            knockoutMatches.semi_finals.forEach(doc => semiFinalDocs.push(doc)); // Dapatkan objek doc lengkap
+
+            for (let i = 0; i < 2; i++) {
+                const label = sfLabels[i];
+                let teamA = "TBD";
+                let teamB = "TBD";
+                let scoreA = '';
+                let scoreB = '';
+                let venue = "TBD";
+                let time = "TBD";
+                let isNoData = true; // Bendera untuk menerapkan kelas no-data-message
+                let matchId = `SF${i + 1}_${defaultSfPairings[i].teamA.replace(/\s/g, '_')}_vs_${defaultSfPairings[i].teamB.replace(/\s/g, '_')}`;
+                let saveButtonDisabled = true;
+
+                if (semiFinalDocs[i]) { // Periksa apakah data aktual ada untuk pertandingan SF ini
+                    const match = semiFinalDocs[i].data();
+                    teamA = match.teamA || "TBD";
+                    teamB = match.teamB || "TBD";
+                    scoreA = match.scoreA !== undefined ? match.scoreA : '';
+                    scoreB = match.scoreB !== undefined ? match.scoreB : '';
+                    venue = match.venue || "TBD";
+                    time = match.time || "TBD";
+                    isNoData = false; // Data ada, jadi jangan terapkan no-data-message
+                    matchId = semiFinalDocs[i].id; // Gunakan ID dokumen yang sebenarnya dari Firestore
+                    saveButtonDisabled = false;
+                } else {
+                    // Jika data aktual untuk pertandingan SF ini hilang, gunakan pemenang default
+                    if (i === 0) { // SF1
+                        teamA = defaultSfPairings[0].teamA;
+                        teamB = defaultSfPairings[0].teamB;
+                    } else if (i === 1) { // SF2
+                        teamA = defaultSfPairings[1].teamA;
+                        teamB = defaultSfPairings[1].teamB;
+                    }
+                    // Untuk pertandingan placeholder, jika tidak ada tim nyata, nonaktifkan tombol save.
+                    // Jika pengguna ingin memasukkan tim secara manual, itu adalah fitur yang lebih besar.
+                    saveButtonDisabled = true; 
+                }
+
+                sfHtml += `<div class="bracket-match ${isNoData ? 'no-data-message' : ''}">
+                                <p class="teams">${label}: ${teamA} vs ${teamB}</p>
+                                <p class="score">Score: 
+                                    <input type="number" id="${matchId}_scoreA" class="score-input" value="${scoreA}" min="0"> - 
+                                    <input type="number" id="${matchId}_scoreB" class="score-input" value="${scoreB}" min="0">
+                                </p>
+                                <p class="venue-time">Venue: ${venue}, Time: ${time}</p>
+                                <div class="match-edit-controls">
+                                    <button class="save-button" ${saveButtonDisabled ? 'disabled' : ''} onclick="window.saveKnockoutMatch('semi_finals', '${matchId}', '${teamA}', '${teamB}')">Save</button>
+                                </div>
+                            </div>`;
+            }
+            document.getElementById('semiFinals').innerHTML = sfHtml;
+
+            // --- Final ---
+            let finalHtml = "";
+            const finalLabel = "Final"; // Label untuk pertandingan final
+            // Pasangan Final default jika tidak ada data aktual
+            const defaultFinalPairing = { teamA: "Winner SF1", teamB: "Winner SF2" };
+
+            // Pastikan satu kotak pertandingan selalu dirender untuk Final
+            const finalDocs = [];
+            knockoutMatches.final.forEach(doc => finalDocs.push(doc)); // Dapatkan objek doc lengkap
+
+            let teamA_final = "TBD";
+            let teamB_final = "TBD";
+            let scoreA_final = '';
+            let scoreB_final = '';
+            let venue_final = "TBD";
+            let time_final = "TBD";
+            let isFinalNoData = true;
+            let finalMatchId = `Final_${defaultFinalPairing.teamA.replace(/\s/g, '_')}_vs_${defaultFinalPairing.teamB.replace(/\s/g, '_')}`;
+            let finalSaveButtonDisabled = true;
+
+
+            if (finalDocs[0]) { // Periksa apakah data aktual ada untuk pertandingan Final
+                const match = finalDocs[0].data();
+                teamA_final = match.teamA || "TBD";
+                teamB_final = match.teamB || "TBD";
+                scoreA_final = match.scoreA !== undefined ? match.scoreA : '';
+                scoreB_final = match.scoreB !== undefined ? match.scoreB : '';
+                venue_final = match.venue || "TBD";
+                time_final = match.time || "TBD";
+                isFinalNoData = false;
+                finalMatchId = finalDocs[0].id; // Gunakan ID dokumen aktual
+                finalSaveButtonDisabled = false;
+            } else {
+                // Jika data aktual hilang, gunakan pemenang default
+                teamA_final = defaultFinalPairing.teamA;
+                teamB_final = defaultFinalPairing.teamB;
+                finalSaveButtonDisabled = true;
+            }
+
+            finalHtml += `<div class="bracket-match ${isFinalNoData ? 'no-data-message' : ''}">
+                            <p class="teams">${finalLabel}: ${teamA_final} vs ${teamB_final}</p>
+                            <p class="score">Score: 
+                                <input type="number" id="${finalMatchId}_scoreA" class="score-input" value="${scoreA_final}" min="0"> - 
+                                <input type="number" id="${finalMatchId}_scoreB" class="score-input" value="${scoreB_final}" min="0">
+                            </p>
+                            <p class="venue-time">Venue: ${venue_final}, Time: ${time_final}</p>
+                            <div class="match-edit-controls">
+                                <button class="save-button" ${finalSaveButtonDisabled ? 'disabled' : ''} onclick="window.saveKnockoutMatch('final', '${finalMatchId}', '${teamA_final}', '${teamB_final}')">Save</button>
+                            </div>
+                        </div>`;
+            
+            document.getElementById('finalMatch').innerHTML = finalHtml;
+
+        } catch (error) {
+            console.error("Error fetching Next Stage data: ", error);
+            document.getElementById('quarterFinals').innerHTML = `<div class="bracket-match no-data-message"><p>Error loading Quarter Final data.</p></div>`;
+            document.getElementById('semiFinals').innerHTML = `<div class="bracket-match no-data-message"><p>Error loading Semi Final data.</p></div>`;
+            document.getElementById('finalMatch').innerHTML = `<div class="bracket-match no-data-message"><p>Error loading Final data.</p></div>`;
+        }
+    }
+
+    // Fungsi untuk menyimpan semua hasil pertandingan Tahap Grup
+    window.saveAllGroupMatches = async function(group) {
+        try {
+            const groupDocRef = doc(db, "matchResults", group);
+            const groupDocSnap = await getDoc(groupDocRef);
+            let currentMatches = groupDocSnap.exists() ? groupDocSnap.data().matches || {} : {};
+            let updatedMatches = { ...currentMatches };
+
+            const teamsSnapshot = await getDocs(collection(db, "teams"));
+            const teamsByGroup = {};
+            teamsSnapshot.forEach(doc => {
+                const data = doc.data();
+                const groupName = data.group;
+                const teamName = data.teamName;
+                if (groupName && teamName) {
+                    if (!teamsByGroup[groupName]) teamsByGroup[groupName] = [];
+                    teamsByGroup[groupName].push(teamName);
+                }
+            });
+
+            const groupTeams = teamsByGroup[group] || [];
+            groupTeams.sort();
+
+            for (let i = 0; i < groupTeams.length; i++) {
+                for (let j = i + 1; j < groupTeams.length; j++) {
+                    const teamA = groupTeams[i];
+                    const teamB = groupTeams[j];
+                    const matchId_forward = `${teamA.replace(/\s/g, '_')}_vs_${teamB.replace(/\s/g, '_')}`;
+                    const matchId_backward = `${teamB.replace(/\s/g, '_')}_vs_${teamA.replace(/\s/g, '_')}`;
+
+                    const inputA = document.getElementById(`${matchId_forward}_scoreA`);
+                    const inputB = document.getElementById(`${matchId_forward}_scoreB`);
+
+                    if (inputA && inputB) {
+                        const scoreA = parseInt(inputA.value);
+                        const scoreB = parseInt(inputB.value);
+
+                        if (!isNaN(scoreA) && !isNaN(scoreB)) {
+                            // Update both forward and backward keys for consistency
+                            updatedMatches[matchId_forward] = `${scoreA}-${scoreB}`;
+                            updatedMatches[matchId_backward] = `${scoreB}-${scoreA}`;
+                        } else if (inputA.value !== '' || inputB.value !== '') {
+                            // Jika salah satu skor diisi tetapi yang lain tidak, atau ada input tetapi bukan angka
+                            console.warn(`Skor untuk ${teamA} vs ${teamB} dalam Kumpulan ${group} tidak lengkap atau tidak valid. Melewatkan pembaruan untuk pertandingan ini.`);
+                        }
+                    }
+                }
+            }
+            await setDoc(groupDocRef, { matches: updatedMatches }, { merge: true }); 
+            alert(`Semua skor perlawanan dalam Kumpulan ${group} telah dikemaskini.`); 
+            fetchGroupStageData(); // Muat ulang data untuk memperbarui tampilan setelah save
+        } catch (error) {
+            console.error("Error saving all group matches:", error);
+            alert("Gagal mengemaskini semua skor perlawanan kumpulan. Sila cuba lagi."); 
+        }
+    }
+
+    // Fungsi untuk menyimpan hasil pertandingan Tahap Knockout
+    window.saveKnockoutMatch = async function(stage, matchId, teamA, teamB) {
+        try {
+            const scoreA = document.getElementById(`${matchId}_scoreA`).value;
+            const scoreB = document.getElementById(`${matchId}_scoreB`).value;
+
+            if (scoreA === '' || scoreB === '') {
+                alert('Sila masukkan skor untuk kedua-dua pasukan.'); 
+                return;
+            }
+            
+            // Referensi ke dokumen pertandingan spesifik
+            const matchDocRef = doc(db, "knockoutMatches", stage, "matches", matchId);
+
+            // Perbarui dokumen
+            await setDoc(matchDocRef, { 
+                teamA: teamA, 
+                teamB: teamB, 
+                scoreA: parseInt(scoreA),
+                scoreB: parseInt(scoreB)
+            }, { merge: true }); 
+
+            alert(`Skor untuk ${teamA} vs ${teamB} dalam ${stage.replace('_', ' ')} telah dikemaskini.`); 
+            // Muat ulang data untuk memperbarui tampilan setelah save
+            fetchNextStageData();
+        } catch (error) {
+            console.error(`Error saving ${stage} match ${matchId}:`, error);
+            alert(`Gagal mengemaskini skor perlawanan ${stage.replace('_', ' ')}. Sila cuba lagi.`); 
+        }
+    }
+
+
+    // Mengambil dan menampilkan data untuk Tahap Grup (tabel dan rincian pertandingan).
+    async function fetchGroupStageData() {
+        try {
+            // Panggil getGroupStageData() untuk mendapatkan semua data yang diperlukan
+            const { matchesByGroup, teamsByGroup } = await getGroupStageData(); 
+
+            let matchDetailsHtml = ""; // Mengganti nama dari matchMatrixHtml
+            for (const group of groups) {
+                const groupDocRef = doc(db, "matchResults", group);
+                const groupDocSnap = await getDoc(groupDocRef);
+                
+                const groupTeams = teamsByGroup[group] || [];
+                groupTeams.sort();
+
+                matchDetailsHtml += `<h4>Group ${group}</h4>`;
+
+                if (groupTeams.length > 0) {
+                    const venue = groupDocSnap.exists() ? (groupDocSnap.data().venue || 'N/A') : 'N/A';
+                    const time = groupDocSnap.exists() ? (groupDocSnap.data().time || 'N/A') : 'N/A';
+                    matchDetailsHtml += `<div class="venue-time">Venue: ${venue}, Time: ${time}</div>`;
+
+                    matchDetailsHtml += `<table class="match-matrix-table">
+                                        <thead>
+                                            <tr>
+                                                <th></th>`;
+                    groupTeams.forEach(team => {
+                        matchDetailsHtml += `<th>${team}</th>`;
+                    });
+                    matchDetailsHtml += `</tr></thead><tbody>`; 
+                    groupTeams.forEach(rowTeam => {
+                        matchDetailsHtml += `<tr><th>${rowTeam}</th>`;
+                        groupTeams.forEach(colTeam => {
+                            if (rowTeam === colTeam) {
+                                matchDetailsHtml += `<td class="empty-cell"></td>`;
+                            } else {
+                                // Default skor menjadi string kosong untuk kolom input
+                                let scoreA = '';
+                                let scoreB = '';
+                                if (groupDocSnap.exists() && matchesByGroup[group]) {
+                                    const matches = matchesByGroup[group];
+                                    const key1 = `${rowTeam.replace(/\s/g, '_')}_vs_${colTeam.replace(/\s/g, '_')}`;
+                                    const key2 = `${colTeam.replace(/\s/g, '_')}_vs_${rowTeam.replace(/\s/g, '_')}`;
+
+                                    let rawScore;
+                                    if (matches[key1]) {
+                                        rawScore = matches[key1];
+                                        const parts = rawScore.split('-');
+                                        scoreA = parts[0] || '';
+                                        scoreB = parts[1] || '';
+                                    } else if (matches[key2]) {
+                                        rawScore = matches[key2];
+                                        const parts = rawScore.split('-');
+                                        // Tukar skor jika kunci dibalik agar konsisten tampilan
+                                        scoreA = parts[1] || ''; 
+                                        scoreB = parts[0] || '';
+                                    }
+                                }
+                                const matchId = `${rowTeam.replace(/\s/g, '_')}_vs_${colTeam.replace(/\s/g, '_')}`; // Gunakan format ID yang konsisten
+
+                                matchDetailsHtml += `<td class="score-cell">
+                                                        <input type="number" id="${matchId}_scoreA" class="score-input" value="${scoreA}" min="0"> - 
+                                                        <input type="number" id="${matchId}_scoreB" class="score-input" value="${scoreB}" min="0">
+                                                    </td>`;
+                            }
+                        });
+                        matchDetailsHtml += `</tr>`;
+                    });
+                    matchDetailsHtml += `</tbody></table>`;
+                    // Tambahkan butang simpan di bawah setiap tabel grup
+                    matchDetailsHtml += `<div class="match-edit-controls">
+                                            <button class="save-button" onclick="window.saveAllGroupMatches('${group}')">Save All Group ${group} Matches</button>
+                                        </div>`;
+                } else {
+                    matchDetailsHtml += `<p>No teams registered for Group ${group}.</p>`;
+                }
+            }
+            document.getElementById('matchMatrix').innerHTML = matchDetailsHtml; 
+        } catch (error) {
+            console.error("Error fetching Group Stage data:", error);
+            document.getElementById('matchMatrix').innerHTML = "<p>Error loading match details data.</p>";
+        }
+    }
+
+
+    // Panggil fungsi pengambilan data saat halaman dimuat
+    document.addEventListener('DOMContentLoaded', () => {
+        window.switchTab('groupStage'); 
+        console.log("Fetching Next Stage data for update...");
+        fetchNextStageData(); 
+        console.log("Fetching Group Stage data for update...");
+        fetchGroupStageData();
+    });
   </script>
-  <div class="container">
-    <button onclick="location.href='index.html'">Back to Main</button>
-  </div>
 </body>
 </html>
