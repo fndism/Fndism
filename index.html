@@ -110,6 +110,7 @@
         <div class="space-y-4">
             <button class="menu-button" onclick="location.href='draw.html'">🎯 Draw Group</button>
             <button class="menu-button" onclick="location.href='results.html'">📊 View Match Info</button>
+            <button class="menu-button" onclick="location.href='rules.html'">📚 Rules of Competition</button>
             
             <!-- Admin Login button (always visible, toggles login box) -->
             <button class="menu-button bg-purple-500 hover:bg-purple-600" onclick="window.toggleLoginBox()">
@@ -152,8 +153,7 @@
 
             if (username === 'admin' && password === 'unimap25') {
                 loginMsg.textContent = ""; // Clear any previous error message
-                // Changed to explicitly use ./ for relative path
-                window.location.href = './admin.html'; // Redirect to admin page on successful login
+                window.location.href = './update-match.html'; // Redirect to admin page on successful login
             } else {
                 loginMsg.textContent = "Invalid username or password.";
             }
