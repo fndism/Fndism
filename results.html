@@ -10,6 +10,9 @@
       background: #f8f9fa;
       padding: 20px;
       position: relative; /* Needed for absolute positioning of back link */
+      min-height: 100vh; /* Ensure body takes full viewport height for footer positioning */
+      display: flex;
+      flex-direction: column;
     }
     h1 {
       text-align: center;
@@ -62,6 +65,7 @@
       background: #fff; /* White background for content */
       border-radius: 6px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      flex-grow: 1; /* Allow content to grow and push footer down */
     }
     .tab-content.active {
       display: block;
@@ -294,11 +298,20 @@
             display: none; /* Hide lines on mobile */
         }
     }
+
+    /* Footer styling */
+    .footer {
+        margin-top: auto; /* Push footer to the bottom */
+        padding-top: 20px;
+        text-align: center;
+        font-size: 0.9em;
+        color: #777;
+    }
   </style>
 </head>
 <body>
   <a href="index.html" class="top-back-link">⬅ Back to Main</a>
-  <h1>Petanque Tournament Results</h1>
+  <h1>SMZ18201: Petanque Match Results</h1>
 
   <div class="tabs">
     <!-- Group Stage tab - now active by default -->
@@ -334,6 +347,10 @@
             <div id="finalMatch">Loading Final match...</div>
         </div>
     </div>
+  </div>
+
+  <div class="footer">
+    <p>&copy; 2025 Fndism. All rights reserved.</p>
   </div>
 
   <script type="module">
