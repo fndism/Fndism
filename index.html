@@ -111,15 +111,16 @@
             <button class="menu-button" onclick="location.href='draw.html'">🎯 Draw Group</button>
             <button class="menu-button" onclick="location.href='results.html'">📊 View Match Info</button>
             
-            <div id="adminArea">
-                <!-- Content here changes based on login status -->
-            </div>
+            <!-- Admin Login button (always visible, toggles login box) -->
+            <button class="menu-button bg-purple-500 hover:bg-purple-600" onclick="window.toggleLoginBox()">
+                🔐 Admin Login
+            </button>
         </div>
 
         <div id="loginBox" class="login-box mt-6 hidden">
-            <input type="email" id="adminEmail" placeholder="Email Admin" class="login-input" />
-            <input type="password" id="adminPassword" placeholder="Kata Laluan" class="login-input" />
-            <button id="loginBtn" class="login-button">Log Masuk</button>
+            <input type="text" id="username" placeholder="Username" class="login-input" />
+            <input type="password" id="password" placeholder="Password" class="login-input" />
+            <button id="loginBtn" class="login-button">Log In</button>
             <div id="loginMsg" class="error-msg"></div>
         </div>
     </div>
@@ -128,124 +129,39 @@
         <p>&copy; 2025 Fndism. All rights reserved.</p>
     </div>
 
-    <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js"; // Import getFirestore if needed
-
-        // Firebase configuration (replace with your actual config)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
-            authDomain: "unimap-petanque.firebaseapp.com",
-            projectId: "unimap-petanque",
-            storageBucket: "unimap-petanque.appspot.com",
-            messagingSenderId: "578920021890",
-            appId: "1:578920021890:web:987ed2de28e7b0353c999b"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app); // Initialize Firestore if you plan to use it here later
-
-        const adminArea = document.getElementById('adminArea');
+        // Get elements
         const loginBox = document.getElementById('loginBox');
-        const adminEmailInput = document.getElementById('adminEmail');
-        const adminPasswordInput = document.getElementById('adminPassword');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
         const loginBtn = document.getElementById('loginBtn');
         const loginMsg = document.getElementById('loginMsg');
 
-        // Function to render UI based on auth state
-        function renderAdminUI(user) {
-            adminArea.innerHTML = ''; // Clear previous content
-            if (user) {
-                // User is signed in
-                adminArea.innerHTML = `
-                    <button class="menu-button bg-green-500 hover:bg-green-600" onclick="location.href='update-match.html'">
-                        ✅ Update Match Results
-                    </button>
-                    <button class="menu-button bg-red-500 hover:bg-red-600 mt-4" id="logoutBtn">
-                        Sign Out
-                    </button>
-                `;
-                loginBox.classList.add('hidden'); // Hide login box
-                document.getElementById('logoutBtn').addEventListener('click', handleSignOut);
-            } else {
-                // User is signed out
-                adminArea.innerHTML = `
-                    <button class="menu-button bg-purple-500 hover:bg-purple-600" onclick="toggleLoginBox()">
-                        🔐 Admin Login
-                    </button>
-                `;
-                loginBox.classList.add('hidden'); // Ensure login box is hidden initially if not logged in
-            }
+        // Function to toggle login box visibility
+        window.toggleLoginBox = function() {
+            loginBox.classList.toggle('hidden');
+            loginMsg.textContent = ""; // Clear message when toggling
+            usernameInput.value = ""; // Clear username input
+            passwordInput.value = "";
         }
 
         // Handle login attempt
-        loginBtn.addEventListener('click', async () => {
-            const email = adminEmailInput.value;
-            const password = adminPasswordInput.value;
+        loginBtn.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
 
-            if (email === '' || password === '') {
-                loginMsg.textContent = "Sila masukkan email dan kata laluan.";
-                return;
-            }
-
-            try {
-                // Set persistence to LOCAL to maintain session across browser tabs/restarts
-                await setPersistence(auth, browserLocalPersistence);
-                await signInWithEmailAndPassword(auth, email, password);
-                loginMsg.textContent = ""; // Clear error message on success
-                // UI will be updated by onAuthStateChanged listener
-            } catch (error) {
-                console.error("Login error:", error);
-                switch (error.code) {
-                    case 'auth/user-not-found':
-                    case 'auth/wrong-password':
-                        loginMsg.textContent = "Email atau kata laluan tidak sah.";
-                        break;
-                    case 'auth/invalid-email':
-                        loginMsg.textContent = "Format email tidak sah.";
-                        break;
-                    case 'auth/too-many-requests':
-                        loginMsg.textContent = "Akaun ini telah disekat sementara kerana terlalu banyak percubaan log masuk yang gagal. Sila cuba lagi kemudian.";
-                        break;
-                    default:
-                        loginMsg.textContent = "Ralat log masuk: " + error.message;
-                        break;
-                }
+            if (username === 'admin' && password === 'unimap25') {
+                loginMsg.textContent = ""; // Clear any previous error message
+                // Changed to explicitly use ./ for relative path
+                window.location.href = './update-match.html'; // Redirect to admin page on successful login
+            } else {
+                loginMsg.textContent = "Invalid username or password.";
             }
         });
 
-        // Handle sign out
-        async function handleSignOut() {
-            try {
-                await signOut(auth);
-                loginMsg.textContent = "Berjaya log keluar.";
-                // UI will be updated by onAuthStateChanged listener
-            } catch (error) {
-                console.error("Logout error:", error);
-                loginMsg.textContent = "Ralat log keluar: " + error.message;
-            }
-        }
-
-        // Toggle login box visibility
-        function toggleLoginBox() {
-            loginBox.classList.toggle('hidden');
-            loginMsg.textContent = ""; // Clear message when toggling
-            adminEmailInput.value = "";
-            adminPasswordInput.value = "";
-        }
-
-        // Listen for authentication state changes
-        onAuthStateChanged(auth, (user) => {
-            renderAdminUI(user);
-        });
-
-        // Initial render when page loads
+        // Initial state: ensure login box is hidden on page load
         document.addEventListener('DOMContentLoaded', () => {
-            // onAuthStateChanged will handle the initial UI render
+            loginBox.classList.add('hidden');
         });
     </script>
 </body>
