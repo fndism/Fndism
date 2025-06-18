@@ -327,22 +327,45 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
+        // Get table headers
+        const headers = [];
+        // Only take the first 4 headers (Player 1, Player 2, Team Name, Group), exclude Actions
+        teamInfoTable.querySelectorAll('thead th').forEach((th, index) => {
+            if (index < 4) { // Exclude the 'Actions' column (index 4)
+                headers.push(th.innerText);
+            }
+        });
+        console.log("PDF Headers:", headers); // Debugging: Check extracted headers
+
+        // Get table data
+        const data = [];
+        teamInfoTable.querySelectorAll('tbody tr').forEach(row => {
+            const rowData = [];
+            row.querySelectorAll('td').forEach((td, index) => {
+                if (index < 4) { // Exclude the 'Actions' column (index 4)
+                    rowData.push(td.innerText);
+                }
+            });
+            // Only add rows that have actual data (not the "No teams registered yet." message)
+            if (rowData.length > 0 && rowData[0] !== "No teams registered yet.") {
+                data.push(rowData);
+            }
+        });
+        console.log("PDF Data:", data); // Debugging: Check extracted data
+
+        if (data.length === 0) {
+            alert("No data available to generate PDF.");
+            return;
+        }
+
         // AutoTable options for styling
         const autoTableOptions = {
             startY: 20, // Start table below the title
+            head: [headers], // Pass extracted headers
+            body: data,    // Pass extracted data
             headStyles: { fillColor: [66, 153, 225], textColor: 255, fontStyle: 'bold' }, // Blue header
             alternateRowStyles: { fillColor: [247, 250, 252] }, // Light gray for alternate rows
             styles: { fontSize: 10, cellPadding: 3, textColor: [45, 55, 72] },
-            columnStyles: {
-                // Ensure the 'Actions' column is not included in the PDF
-                4: { cellWidth: 0, overflow: 'hidden' } // Hide the 5th column (index 4)
-            },
-            didParseCell: function(data) {
-                // Remove buttons from the 'Actions' column content
-                if (data.column.index === 4 && data.cell.raw) {
-                    data.cell.text = []; // Clear the text for this cell
-                }
-            },
             didDrawPage: function(data) {
                 // Add header on each page
                 doc.setFontSize(16);
@@ -352,7 +375,7 @@
         };
 
         // Add the table to the PDF
-        doc.autoTable(teamInfoTable, autoTableOptions);
+        doc.autoTable(autoTableOptions); // Call autoTable directly with options
 
         // Save the PDF
         doc.save('Team_Information.pdf');
