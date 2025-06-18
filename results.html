@@ -1,30 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Petanque Results</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
+      background-color: #f0f2f5;
       margin: 0;
       padding: 0;
-      background: #f4f4f4;
     }
     .tabs {
       display: flex;
-      background: #0066cc;
+      justify-content: center;
+      background-color: #0077cc;
     }
-    .tab {
-      flex: 1;
-      text-align: center;
+    .tab-button {
       padding: 1rem;
       color: white;
       cursor: pointer;
-      font-weight: bold;
+      border: none;
+      background: none;
+      font-size: 1rem;
     }
-    .tab.active {
-      background: #004c99;
+    .tab-button.active {
+      background-color: #005fa3;
     }
     .tab-content {
       display: none;
@@ -33,93 +34,102 @@
     .tab-content.active {
       display: block;
     }
-    .match-box {
-      background: white;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      border-radius: 8px;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    h2 {
+      color: #0077cc;
     }
-    .match-title {
-      font-weight: bold;
-      font-size: 1.1rem;
-      margin-bottom: 0.5rem;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    th, td {
+      padding: 0.5rem;
+      text-align: center;
+      border: 1px solid #ccc;
     }
     .venue-time {
+      margin-top: -0.5rem;
       font-size: 0.9rem;
-      color: gray;
+      color: #555;
     }
-    .back-btn {
-      display: block;
-      width: fit-content;
-      margin: 2rem auto 0;
-      padding: 0.75rem 1.5rem;
-      background: #0066cc;
-      color: white;
-      border: none;
-      border-radius: 6px;
+    .match-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 0.5rem;
+    }
+    .match-cell {
+      padding: 0.5rem;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .back-link {
+      text-align: center;
+      margin-top: 2rem;
+    }
+    .back-link a {
       text-decoration: none;
+      color: #0077cc;
     }
   </style>
 </head>
 <body>
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('grouping')">🏆 Group Stage</div>
-    <div class="tab" onclick="switchTab('next')">🎯 Next Stage</div>
+    <button class="tab-button active" onclick="showTab('group')">Group Stage</button>
+    <button class="tab-button" onclick="showTab('next')">Next Stage</button>
   </div>
 
-  <div id="grouping" class="tab-content active">
+  <div id="group" class="tab-content active">
     <h2>Group Stage (A–F)</h2>
-    <p>Group A, B, C... table goes here (loaded from Firebase)</p>
-    <!-- Nanti akan sambung dengan data Firebase -->
+    <div id="groupTables">
+      <!-- Group tables loaded from Firebase here -->
+    </div>
+    <div id="matchSchedule">
+      <!-- Match matrix goes here -->
+    </div>
+    <div class="venue-time" id="groupVenueTime">
+      <!-- Venue and Time info loaded from Firebase -->
+    </div>
   </div>
 
   <div id="next" class="tab-content">
-    <h2>Knockout Stage</h2>
-
-    <div class="match-box">
-      <div class="match-title">Quarter Final 1: A1 vs B2</div>
-      <div class="venue-time">Venue: Court 1<br>Time: 9:00 AM</div>
+    <h2>Next Stage</h2>
+    <div id="quarterFinal">
+      <h3>Quarter Final</h3>
+      <div class="match-grid" id="qfMatches">
+        <!-- Auto-populated QF Matches -->
+      </div>
     </div>
-    <div class="match-box">
-      <div class="match-title">Quarter Final 2: B1 vs C2</div>
-      <div class="venue-time">Venue: Court 2<br>Time: 9:00 AM</div>
+    <div id="semiFinal">
+      <h3>Semi Final</h3>
+      <div class="match-grid" id="sfMatches">
+        <!-- Auto-populated SF Matches -->
+      </div>
     </div>
-    <div class="match-box">
-      <div class="match-title">Quarter Final 3: C1 vs D2</div>
-      <div class="venue-time">Venue: Court 1<br>Time: 10:00 AM</div>
+    <div id="final">
+      <h3>Final</h3>
+      <div class="match-grid" id="finalMatch">
+        <!-- Final Match -->
+      </div>
     </div>
-    <div class="match-box">
-      <div class="match-title">Quarter Final 4: D1 vs A2</div>
-      <div class="venue-time">Venue: Court 2<br>Time: 10:00 AM</div>
+    <div class="venue-time" id="knockoutVenueTime">
+      <!-- Venue and Time info for knockout matches -->
     </div>
-
-    <h3>Semi Finals</h3>
-    <div class="match-box">
-      <div class="match-title">Semi Final 1: Winner QF1 vs Winner QF2</div>
-      <div class="venue-time">Venue: Court 1<br>Time: 11:00 AM</div>
-    </div>
-    <div class="match-box">
-      <div class="match-title">Semi Final 2: Winner QF3 vs Winner QF4</div>
-      <div class="venue-time">Venue: Court 2<br>Time: 11:00 AM</div>
-    </div>
-
-    <h3>Final</h3>
-    <div class="match-box">
-      <div class="match-title">Final: Winner SF1 vs Winner SF2</div>
-      <div class="venue-time">Venue: Main Court<br>Time: 2:00 PM</div>
+    <div class="back-link">
+      <a href="index.html">⬅ Back to Main</a>
     </div>
   </div>
 
-  <a class="back-btn" href="index.html">⬅ Back to Main</a>
-
   <script>
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    function showTab(tab) {
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-      document.querySelector(`.tab[onclick*='${tabId}']`).classList.add('active');
-      document.getElementById(tabId).classList.add('active');
+      document.getElementById(tab).classList.add('active');
+      event.target.classList.add('active');
     }
+
+    // Firebase logic will be added here later to load group tables, match results, knockout rounds etc
   </script>
 </body>
 </html>
