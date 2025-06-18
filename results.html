@@ -1,135 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Petanque Results</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f0f2f5;
       margin: 0;
       padding: 0;
+      background: #f5f5f5;
     }
+
     .tabs {
       display: flex;
       justify-content: center;
-      background-color: #0077cc;
+      background: #0077cc;
     }
-    .tab-button {
-      padding: 1rem;
+
+    .tab {
+      padding: 1rem 2rem;
       color: white;
       cursor: pointer;
-      border: none;
-      background: none;
-      font-size: 1rem;
+      border-bottom: 3px solid transparent;
     }
-    .tab-button.active {
-      background-color: #005fa3;
+
+    .tab.active {
+      border-bottom: 3px solid yellow;
+      font-weight: bold;
     }
+
     .tab-content {
       display: none;
       padding: 2rem;
     }
+
     .tab-content.active {
       display: block;
     }
+
     h2 {
-      color: #0077cc;
+      margin-top: 1rem;
+      color: #333;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 1rem;
+      margin-bottom: 2rem;
     }
+
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+
     th, td {
       padding: 0.5rem;
       text-align: center;
-      border: 1px solid #ccc;
     }
+
+    .match-info {
+      margin-bottom: 2rem;
+    }
+
     .venue-time {
-      margin-top: -0.5rem;
       font-size: 0.9rem;
       color: #555;
+      margin-bottom: 2rem;
     }
-    .match-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 0.5rem;
-    }
-    .match-cell {
-      padding: 0.5rem;
-      background-color: #fff;
-      border: 1px solid #ccc;
+
+    .back-btn {
+      display: block;
+      width: 100%;
+      max-width: 200px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 5px;
       text-align: center;
-      font-size: 0.9rem;
-    }
-    .back-link {
-      text-align: center;
-      margin-top: 2rem;
-    }
-    .back-link a {
       text-decoration: none;
-      color: #0077cc;
+    }
+
+    .stage-box {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      margin-bottom: 2rem;
     }
   </style>
 </head>
 <body>
+
   <div class="tabs">
-    <button class="tab-button active" onclick="showTab('group')">Group Stage</button>
-    <button class="tab-button" onclick="showTab('next')">Next Stage</button>
+    <div class="tab active" onclick="switchTab('group')">Group Stage</div>
+    <div class="tab" onclick="switchTab('next')">Next Stage</div>
   </div>
 
-  <div id="group" class="tab-content active">
-    <h2>Group Stage (A–F)</h2>
-    <div id="groupTables">
-      <!-- Group tables loaded from Firebase here -->
+  <!-- GROUP STAGE TAB -->
+  <div class="tab-content active" id="group">
+    <div id="groupTablesContainer">
+      <!-- Auto loaded tables A-F -->
     </div>
-    <div id="matchSchedule">
-      <!-- Match matrix goes here -->
+    <div id="matchScheduleContainer">
+      <!-- Matrix format match table goes here -->
     </div>
-    <div class="venue-time" id="groupVenueTime">
-      <!-- Venue and Time info loaded from Firebase -->
-    </div>
-  </div>
-
-  <div id="next" class="tab-content">
-    <h2>Next Stage</h2>
-    <div id="quarterFinal">
-      <h3>Quarter Final</h3>
-      <div class="match-grid" id="qfMatches">
-        <!-- Auto-populated QF Matches -->
-      </div>
-    </div>
-    <div id="semiFinal">
-      <h3>Semi Final</h3>
-      <div class="match-grid" id="sfMatches">
-        <!-- Auto-populated SF Matches -->
-      </div>
-    </div>
-    <div id="final">
-      <h3>Final</h3>
-      <div class="match-grid" id="finalMatch">
-        <!-- Final Match -->
-      </div>
-    </div>
-    <div class="venue-time" id="knockoutVenueTime">
-      <!-- Venue and Time info for knockout matches -->
-    </div>
-    <div class="back-link">
-      <a href="index.html">⬅ Back to Main</a>
+    <div class="venue-time" id="venueTimeContainer">
+      <!-- Venue: .. Time: .. -->
     </div>
   </div>
 
-  <script>
-    function showTab(tab) {
-      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+  <!-- NEXT STAGE TAB -->
+  <div class="tab-content" id="next">
+    <h2>Quarter Finals</h2>
+    <div class="stage-box" id="quarterFinals">
+      <!-- Auto filled from top 6 + 2 -->
+    </div>
+
+    <h2>Semi Finals</h2>
+    <div class="stage-box" id="semiFinals">
+      <!-- Admin filled -->
+    </div>
+
+    <h2>Final</h2>
+    <div class="stage-box" id="finalMatch">
+      <!-- Admin filled -->
+    </div>
+
+    <div class="venue-time" id="nextVenueTime">
+      <!-- Venue: ... Time: ... -->
+    </div>
+
+    <a href="index.html" class="back-btn">Back to Main</a>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
+      authDomain: "unimap-petanque.firebaseapp.com",
+      projectId: "unimap-petanque",
+      storageBucket: "unimap-petanque.appspot.com",
+      messagingSenderId: "578920021890",
+      appId: "1:578920021890:web:987ed2de28e7b0353c999b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
       document.getElementById(tab).classList.add('active');
-      event.target.classList.add('active');
     }
 
-    // Firebase logic will be added here later to load group tables, match results, knockout rounds etc
+    async function loadGroupTables() {
+      const teamsSnap = await getDocs(collection(db, "teams"));
+      const teams = {};
+
+      teamsSnap.forEach(doc => {
+        const data = doc.data();
+        if (!teams[data.group]) teams[data.group] = [];
+        teams[data.group].push(data);
+      });
+
+      const container = document.getElementById("groupTablesContainer");
+      container.innerHTML = "";
+
+      Object.keys(teams).sort().forEach(group => {
+        const table = document.createElement("table");
+        const title = document.createElement("h2");
+        title.textContent = `Group ${group}`;
+        const header = `
+          <tr>
+            <th>Team</th>
+            <th>Played</th>
+            <th>Win</th>
+            <th>Loss</th>
+            <th>Point</th>
+            <th>+ Point</th>
+            <th>- Point</th>
+          </tr>`;
+
+        let rows = "";
+        teams[group].forEach(team => {
+          rows += `<tr>
+            <td>${team.teamName}</td>
+            <td>${team.played || 0}</td>
+            <td>${team.win || 0}</td>
+            <td>${team.loss || 0}</td>
+            <td>${team.points || 0}</td>
+            <td>${team.pointPlus || 0}</td>
+            <td>${team.pointMinus || 0}</td>
+          </tr>`;
+        });
+
+        table.innerHTML = header + rows;
+        container.appendChild(title);
+        container.appendChild(table);
+      });
+    }
+
+    async function loadQuarterFinals() {
+      const res = await getDocs(collection(db, "teams"));
+      const teams = [];
+
+      res.forEach(doc => {
+        const data = doc.data();
+        teams.push(data);
+      });
+
+      const groupWinners = {};
+      const groupSeconds = {};
+
+      const grouped = {};
+      for (const team of teams) {
+        if (!grouped[team.group]) grouped[team.group] = [];
+        grouped[team.group].push(team);
+      }
+
+      for (const group in grouped) {
+        grouped[group].sort((a, b) => (b.points || 0) - (a.points || 0));
+        groupWinners[group] = grouped[group][0];
+        groupSeconds[group] = grouped[group][1];
+      }
+
+      const topWinners = Object.values(groupWinners);
+      const topSeconds = Object.values(groupSeconds)
+        .sort((a, b) => (b.points || 0) - (a.points || 0))
+        .slice(0, 2);
+
+      const allQF = [...topWinners, ...topSeconds].sort(() => Math.random() - 0.5);
+      const qfDiv = document.getElementById("quarterFinals");
+      qfDiv.innerHTML = "";
+
+      for (let i = 0; i < 4; i++) {
+        const team1 = allQF[i * 2];
+        const team2 = allQF[i * 2 + 1];
+        qfDiv.innerHTML += `<p>QF${i + 1}: ${team1.teamName} vs ${team2.teamName}<br><small>Venue: ____ | Time: ____</small></p>`;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadGroupTables();
+      loadQuarterFinals();
+    });
   </script>
 </body>
 </html>
