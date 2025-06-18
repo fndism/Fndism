@@ -2,129 +2,122 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>UniMAP Petanque Results</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Petanque Results</title>
   <style>
-    body {font-family: sans-serif; background: #f5f7fa; margin: 0; padding: 1rem;}
-    .tabs {display: flex; justify-content: center; margin-bottom: 1rem;}
-    .tab {padding: .75rem 1.5rem; cursor: pointer; background: #ddd; margin-right: .25rem; border-radius: 4px 4px 0 0;}
-    .tab.active {background: #0077cc; color: white;}
-    .tab-content {display: none; background: white; padding: 1rem; border-radius: 0 4px 4px 4px;}
-    .tab-content.active {display: block;}
-    h2 {margin-top: 0;}
-    table {width: 100%; border-collapse: collapse; margin-bottom: 1rem;}
-    th, td {border: 1px solid #aaa; padding: .5rem; text-align: center;}
-    .venue-time {font-style: italic; margin-bottom: 1rem;}
-    .match-box {border: 1px solid #ccc; padding: 0.75rem; margin-bottom: .75rem; border-radius: 4px; background: #eef;}
-    .back-btn {display: block; text-align: center; margin-top: 1rem; text-decoration: none; color: #0077cc;}
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+      padding: 20px;
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .tab.active {
+      background: #0056b3;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      text-align: center;
+      padding: 8px;
+    }
+    th {
+      background: #e9ecef;
+    }
+    .match-info, .knockout {
+      background: #fff;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .venue-time {
+      font-style: italic;
+      margin-top: 5px;
+    }
+    a.back-link {
+      display: block;
+      margin-top: 30px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
+  <h1>Petanque Tournament Results</h1>
+
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('groupTab')">Group Stage</div>
-    <div class="tab" onclick="switchTab('nextTab')">Next Stage</div>
+    <div class="tab active" onclick="switchTab('groupStage')">Group Stage</div>
+    <div class="tab" onclick="switchTab('nextStage')">Next Stage</div>
   </div>
-  <div id="groupTab" class="tab-content active">
-    <h2>Group Stage (A–F)</h2>
-    <div id="groupTables"></div>
-    <h3>Match Matrix</h3>
-    <div id="matrixContainer"></div>
-    <div id="groupVenueTime" class="venue-time"></div>
+
+  <div id="groupStage" class="tab-content active">
+    <div id="groupTables">Loading group tables...</div>
+    <div id="matchMatrix">Loading match matrix...</div>
   </div>
-  <div id="nextTab" class="tab-content">
-    <h2>Quarter Finals</h2>
-    <div id="qfContainer"></div>
-    <h2>Semi Finals</h2>
-    <div id="sfContainer"></div>
+
+  <div id="nextStage" class="tab-content">
+    <h2>Quarter Final</h2>
+    <div class="knockout" id="quarterFinals">Loading...</div>
+
+    <h2>Semi Final</h2>
+    <div class="knockout" id="semiFinals">Waiting result...</div>
+
     <h2>Final</h2>
-    <div id="finalContainer"></div>
-    <div id="knockoutVenueTime" class="venue-time"></div>
-    <a href="index.html" class="back-btn">⬅ Back to Main</a>
+    <div class="knockout" id="finalMatch">Waiting result...</div>
+
+    <a href="index.html" class="back-link">⬅ Back to Main</a>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-    const app = initializeApp({
-      apiKey: "...", authDomain: "...", projectId: "unimap-petanque", /* ... */
-    });
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
+      authDomain: "unimap-petanque.firebaseapp.com",
+      projectId: "unimap-petanque",
+      storageBucket: "unimap-petanque.appspot.com",
+      messagingSenderId: "578920021890",
+      appId: "1:578920021890:web:987ed2de28e7b0353c999b"
+    };
+
+    const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const groups = ["A","B","C","D","E","F"];
 
-    function switchTab(id) {
-      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
-      document.querySelector(`.tab[onclick*="'${id}'"]`).classList.add("active");
-      document.getElementById(id).classList.add("active");
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+      document.getElementById(tabId).classList.add('active');
     }
 
-    async function loadGroupStage() {
-      const teamsSnap = await getDocs(collection(db, "teams"));
-      const matchSnap = await getDocs(collection(db, "matchResults"));
-      const venueSnap = await getDocs(collection(db, "venueTime"));
-      const teams = {};
-      teamsSnap.forEach(d => { const v=d.data(); teams[v.group] = teams[v.group]||[]; teams[v.group].push(v); });
-      const matchRes = {};
-      matchSnap.forEach(d => matchRes[d.id] = d.data());
-      const venues = {};
-      venueSnap.forEach(d => venues[d.id] = d.data());
-      const gdiv = document.getElementById("groupTables");
-      gdiv.innerHTML="";
-      for (let g of groups) {
-        if (!teams[g]) continue;
-        let html = `<table><caption>Group ${g}</caption><tr><th>Team</th><th>Played</th><th>Win</th><th>Loss</th><th>Pts</th><th>+Pt</th><th>-Pt</th></tr>`;
-        teams[g].forEach(t => html += `<tr><td>${t.teamName}</td><td>${t.played||0}</td><td>${t.win||0}</td><td>${t.loss||0}</td><td>${t.points||0}</td><td>${t.pointPlus||0}</td><td>${t.pointMinus||0}</td></tr>`);
-        html += `</table>`;
-        gdiv.innerHTML += html;
-      }
+    // TODO: Add logic to:
+    // 1. Load group tables (with win/loss/points)
+    // 2. Load match matrix per group
+    // 3. Auto-calculate best 8 for knockout (based on points or mata)
+    // 4. Render venue & time
 
-      const mid = document.getElementById("matrixContainer");
-      mid.innerHTML="";
-      for (let g of groups) {
-        if (!teams[g]) continue;
-        let html = `<h4>Group ${g}</h4><table><tr><th></th>`;
-        teams[g].forEach(t => html += `<th>${t.teamName}</th>`); html += `</tr>`;
-        teams[g].forEach(r => {
-          html += `<tr><th>${r.teamName}</th>`;
-          teams[g].forEach(c => {
-            if (r.teamName===c.teamName) html+=`<td>-</td>`;
-            else {
-              const k = `${g}_${r.teamName}_vs_${c.teamName}`;
-              const s = matchRes[k]?.score || "-";
-              html+=`<td>${s}</td>`;
-            }
-          });
-          html += `</tr>`;
-        });
-        html += `</table>`;
-        mid.innerHTML += html;
-      }
-      const vtDiv = document.getElementById("groupVenueTime"); vtDiv.innerHTML = "";
-      groups.forEach(g=>{ if(venues[g]) vtDiv.innerHTML+=`Group ${g}: Venue - ${venues[g].venue}, Time - ${venues[g].time}<br>` });
-    }
-
-    async function loadNextStage() {
-      const tSnap = await getDocs(collection(db, "teams"));
-      const tArr = [];
-      tSnap.forEach(d=> tArr.push(d.data()));
-      const grp = {}; groups.forEach(g=> grp[g]=[]);
-      tArr.forEach(t=> grp[t.group].push(t));
-      const winners = [], seconds=[];
-      for (let g of groups) {
-        grp[g].sort((a,b)=> (b.points||0)-(a.points||0));
-        if (grp[g][0]) winners.push(grp[g][0]);
-        if (grp[g][1]) seconds.push(grp[g][1]);
-      }
-      seconds.sort((a,b)=>(b.points||0)-(a.points||0));
-      const qf = [...winners, ...seconds.slice(0,2)].sort(()=> Math.random()-0.5);
-      const qDiv = document.getElementById("qfContainer"); qDiv.innerHTML="";
-      for (let i=0;i<4;i++){
-        qDiv.innerHTML += `<div class="match-box">QF${i+1}: ${qf[i*2].teamName} vs ${qf[i*2+1].teamName}<br><small>Venue: TBD | Time: TBD</small></div>`;
-      }
-    }
-
-    loadGroupStage(); loadNextStage();
+    // Let me know if you want me to continue writing the logic for fetching/displaying the data.
   </script>
 </body>
 </html>
