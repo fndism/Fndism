@@ -14,6 +14,7 @@
       display: flex;
       gap: 10px;
       margin-bottom: 20px;
+      justify-content: center; /* Center the tabs */
     }
     .tab {
       padding: 10px 20px;
@@ -21,28 +22,56 @@
       color: white;
       border-radius: 5px;
       cursor: pointer;
+      font-weight: bold; /* Make tab text bolder */
+      transition: background-color 0.3s ease; /* Smooth transition for hover */
+    }
+    .tab:hover {
+      background: #0056b3; /* Darker blue on hover */
     }
     .tab.active {
       background: #0056b3;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Add shadow to active tab */
     }
     .tab-content {
       display: none;
+      padding: 15px; /* Add some padding to content */
+      background: #fff; /* White background for content */
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     .tab-content.active {
       display: block;
+    }
+    h1 {
+      text-align: center;
+      color: #343a40;
+      margin-bottom: 30px;
+    }
+    h2 {
+      color: #007bff;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 5px;
+      margin-top: 25px;
+      margin-bottom: 15px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
       margin: 15px 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Subtle shadow for tables */
     }
     th, td {
       border: 1px solid #ccc;
       text-align: center;
-      padding: 8px;
+      padding: 10px; /* Increased padding */
     }
     th {
       background: #e9ecef;
+      color: #343a40;
+      font-weight: bold;
+    }
+    tr:nth-child(even) {
+        background-color: #f2f2f2; /* Zebra striping for tables */
     }
     .match-info, .knockout {
       background: #fff;
@@ -51,14 +80,38 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       margin-bottom: 20px;
     }
+    .match-info p {
+      margin: 5px 0; /* Spacing for match info */
+    }
+    .match-info .score {
+      font-weight: bold;
+      color: #dc3545; /* Red for scores */
+    }
+    .match-info .teams {
+      font-size: 1.1em;
+      font-weight: bold;
+    }
     .venue-time {
       font-style: italic;
       margin-top: 5px;
+      color: #6c757d;
+      font-size: 0.9em;
     }
     a.back-link {
       display: block;
       margin-top: 30px;
-      text-align: center;
+      padding: 10px 20px;
+      background: #6c757d; /* Grey background for back link */
+      color: white;
+      border-radius: 5px;
+      text-decoration: none;
+      width: fit-content; /* Make button fit content */
+      margin-left: auto;
+      margin-right: auto;
+      transition: background-color 0.3s ease;
+    }
+    a.back-link:hover {
+        background: #5a6268; /* Darker grey on hover */
     }
   </style>
 </head>
@@ -66,31 +119,38 @@
   <h1>Petanque Tournament Results</h1>
 
   <div class="tabs">
+    <!-- Group Stage tab - now active by default -->
     <div class="tab active" onclick="switchTab('groupStage')">Group Stage</div>
+    <!-- Next Stage tab - now inactive by default -->
     <div class="tab" onclick="switchTab('nextStage')">Next Stage</div>
   </div>
 
+  <!-- Group Stage Content - now active by default -->
   <div id="groupStage" class="tab-content active">
+    <h2>Group Stage Tables</h2>
     <div id="groupTables">Loading group tables...</div>
+    <h2>Match Matrix</h2>
     <div id="matchMatrix">Loading match matrix...</div>
   </div>
 
+  <!-- Next Stage Content - now inactive by default -->
   <div id="nextStage" class="tab-content">
     <h2>Quarter Final</h2>
-    <div class="knockout" id="quarterFinals">Loading...</div>
+    <div class="knockout" id="quarterFinals">Loading Quarter Final matches...</div>
 
     <h2>Semi Final</h2>
-    <div class="knockout" id="semiFinals">Waiting result...</div>
+    <div class="knockout" id="semiFinals">Loading Semi Final matches...</div>
 
     <h2>Final</h2>
-    <div class="knockout" id="finalMatch">Waiting result...</div>
+    <div class="knockout" id="finalMatch">Loading Final match...</div>
 
     <a href="index.html" class="back-link">⬅ Back to Main</a>
   </div>
 
   <script type="module">
+    // Firebase configuration and initialization
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js"; // Added doc and getDoc
 
     const firebaseConfig = {
       apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
@@ -104,20 +164,189 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    function switchTab(tabId) {
+    // Define groups array, similar to your admin page
+    const groups = ["A", "B", "C", "D", "E", "F"];
+
+    /**
+     * Function to switch between different tabs (Next Stage, Group Stage).
+     * It handles adding/removing 'active' classes for both tab buttons and content.
+     * @param {string} tabId - The ID of the tab content to activate (e.g., 'nextStage', 'groupStage').
+     */
+    // Make switchTab globally accessible
+    window.switchTab = function(tabId) {
+      // Deactivate all tab buttons
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      // Deactivate all tab content sections
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      // Activate the clicked tab button
       document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+      // Activate the corresponding tab content
       document.getElementById(tabId).classList.add('active');
     }
 
-    // TODO: Add logic to:
-    // 1. Load group tables (with win/loss/points)
-    // 2. Load match matrix per group
-    // 3. Auto-calculate best 8 for knockout (based on points or mata)
-    // 4. Render venue & time
+    // --- Firebase Data Fetching Functions ---
 
-    // Let me know if you want me to continue writing the logic for fetching/displaying the data.
+    /**
+     * Fetches and displays data for the Next Stage (Quarter, Semi, Final).
+     * Assumes knockout data is stored in sub-collections like:
+     * knockoutMatches/quarter_finals/matches
+     * knockoutMatches/semi_finals/matches
+     * knockoutMatches/final/matches
+     */
+    async function fetchNextStageData() {
+        try {
+            // Quarter Finals
+            const quarterFinalsCollection = collection(db, "knockoutMatches", "quarter_finals", "matches");
+            const qfSnapshot = await getDocs(quarterFinalsCollection);
+            let qfHtml = "<h3>Quarter Finals</h3>";
+            if (qfSnapshot.empty) {
+                qfHtml += "<p>No Quarter Final matches scheduled or played yet.</p>";
+            } else {
+                qfSnapshot.forEach(doc => {
+                    const match = doc.data();
+                    const teamA = match.teamA || "TBD";
+                    const teamB = match.teamB || "TBD";
+                    const scoreA = match.scoreA !== undefined ? match.scoreA : '';
+                    const scoreB = match.scoreB !== undefined ? match.scoreB : '';
+                    const venue = match.venue || "TBD";
+                    const time = match.time || "TBD";
+
+                    qfHtml += `<div class="match-info">
+                                    <p class="teams">${teamA} vs ${teamB}</p>
+                                    <p class="score">Score: ${scoreA} - ${scoreB}</p>
+                                    <p class="venue-time">Venue: ${venue}, Time: ${time}</p>
+                                </div>`;
+                });
+            }
+            document.getElementById('quarterFinals').innerHTML = qfHtml;
+
+            // Semi Finals
+            const semiFinalsCollection = collection(db, "knockoutMatches", "semi_finals", "matches");
+            const sfSnapshot = await getDocs(semiFinalsCollection);
+            let sfHtml = "<h3>Semi Finals</h3>";
+            if (sfSnapshot.empty) {
+                sfHtml += "<p>No Semi Final matches scheduled or played yet.</p>";
+            } else {
+                sfSnapshot.forEach(doc => {
+                    const match = doc.data();
+                    const teamA = match.teamA || "TBD";
+                    const teamB = match.teamB || "TBD";
+                    const scoreA = match.scoreA !== undefined ? match.scoreA : '';
+                    const scoreB = match.scoreB !== undefined ? match.scoreB : '';
+                    const venue = match.venue || "TBD";
+                    const time = match.time || "TBD";
+
+                    sfHtml += `<div class="match-info">
+                                    <p class="teams">${teamA} vs ${teamB}</p>
+                                    <p class="score">Score: ${scoreA} - ${scoreB}</p>
+                                    <p class="venue-time">Venue: ${venue}, Time: ${time}</p>
+                                </div>`;
+                });
+            }
+            document.getElementById('semiFinals').innerHTML = sfHtml;
+
+            // Final Match
+            const finalCollection = collection(db, "knockoutMatches", "final", "matches");
+            const finalSnapshot = await getDocs(finalCollection);
+            let finalHtml = "<h3>Final</h3>";
+            if (finalSnapshot.empty) {
+                finalHtml += "<p>No Final match scheduled or played yet.</p>";
+            } else {
+                finalSnapshot.forEach(doc => {
+                    const match = doc.data();
+                    const teamA = match.teamA || "TBD";
+                    const teamB = match.teamB || "TBD";
+                    const scoreA = match.scoreA !== undefined ? match.scoreA : '';
+                    const scoreB = match.scoreB !== undefined ? match.scoreB : '';
+                    const venue = match.venue || "TBD";
+                    const time = match.time || "TBD";
+
+                    finalHtml += `<div class="match-info">
+                                    <p class="teams">${teamA} vs ${teamB}</p>
+                                    <p class="score">Score: ${scoreA} - ${scoreB}</p>
+                                    <p class="venue-time">Venue: ${venue}, Time: ${time}</p>
+                                </div>`;
+                });
+            }
+            document.getElementById('finalMatch').innerHTML = finalHtml;
+
+        } catch (error) {
+            console.error("Error fetching Next Stage data: ", error);
+            document.getElementById('quarterFinals').innerHTML = "<p>Error loading Quarter Final data.</p>";
+            document.getElementById('semiFinals').innerHTML = "<p>Error loading Semi Final data.</p>";
+            document.getElementById('finalMatch').innerHTML = "<p>Error loading Final data.</p>";
+        }
+    }
+
+    /**
+     * Fetches and displays data for the Group Stage (match matrix).
+     * Assumes match results are stored under 'matchResults' collection,
+     * with each group as a document (e.g., 'matchResults/A').
+     * Each group document has 'venue', 'time', and a 'matches' object.
+     */
+    async function fetchGroupStageData() {
+        try {
+            // Group Tables (from the admin page structure, this data is not saved directly for display here)
+            // The admin page provides a way to input scores, but not calculate total wins/losses/points.
+            // So, for now, we'll indicate this data is not available from the current setup.
+            document.getElementById('groupTables').innerHTML = "<p>Group tables (Win/Loss/Points) are not generated by the current admin page data structure.</p>";
+
+            // Match Matrix
+            let matchMatrixHtml = "<h3>Group Stage Matches / Results</h3>";
+            for (const group of groups) { // Loop through each group (A, B, C, etc.)
+                const groupDocRef = doc(db, "matchResults", group); // Reference to the group's document
+                const groupDocSnap = await getDoc(groupDocRef); // Fetch the specific group's document
+
+                if (groupDocSnap.exists()) {
+                    const groupData = groupDocSnap.data();
+                    matchMatrixHtml += `<h4>Group ${group}</h4>`;
+                    matchMatrixHtml += `<div class="venue-time">Venue: ${groupData.venue || 'N/A'}, Time: ${groupData.time || 'N/A'}</div>`;
+                    
+                    if (groupData.matches && typeof groupData.matches === 'object') {
+                        // Loop through each match entry in the 'matches' object
+                        for (const matchKey in groupData.matches) {
+                            if (groupData.matches.hasOwnProperty(matchKey)) { // Ensure it's an own property
+                                const score = groupData.matches[matchKey];
+                                // Parse matchKey like "TeamA_vs_TeamB" into Team A and Team B
+                                const teams = matchKey.replace(/_/g, ' ').split(' vs '); 
+                                // Ensure teams array has at least 2 elements before accessing
+                                const teamA = teams[0] ? teams[0].trim() : "TBD";
+                                const teamB = teams[1] ? teams[1].trim() : "TBD";
+
+                                matchMatrixHtml += `<div class="match-info">
+                                                        <p class="teams">${teamA} vs ${teamB}</p>
+                                                        <p class="score">Score: ${score}</p>
+                                                    </div>`;
+                            }
+                        }
+                    } else {
+                        matchMatrixHtml += "<p>No matches recorded for this group yet.</p>";
+                    }
+                } else {
+                    matchMatrixHtml += `<h4>Group ${group}</h4><p>No data found for Group ${group}.</p>`;
+                }
+            }
+            document.getElementById('matchMatrix').innerHTML = matchMatrixHtml;
+
+        } catch (error) {
+            console.error("Error fetching Group Stage data: ", error);
+            document.getElementById('groupTables').innerHTML = "<p>Error loading group tables data.</p>";
+            document.getElementById('matchMatrix').innerHTML = "<p>Error loading match matrix data.</p>";
+        }
+    }
+
+    // Call fetch functions when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initial setup for Group Stage as active tab
+        window.switchTab('groupStage'); 
+
+        console.log("Fetching Next Stage data...");
+        fetchNextStageData(); 
+
+        console.log("Fetching Group Stage data...");
+        fetchGroupStageData();
+    });
   </script>
 </body>
 </html>
