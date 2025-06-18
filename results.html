@@ -1,256 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Petanque Results</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>UniMAP Petanque Results</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f5f5f5;
-    }
-
-    .tabs {
-      display: flex;
-      justify-content: center;
-      background: #0077cc;
-    }
-
-    .tab {
-      padding: 1rem 2rem;
-      color: white;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-    }
-
-    .tab.active {
-      border-bottom: 3px solid yellow;
-      font-weight: bold;
-    }
-
-    .tab-content {
-      display: none;
-      padding: 2rem;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    h2 {
-      margin-top: 1rem;
-      color: #333;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 2rem;
-    }
-
-    table, th, td {
-      border: 1px solid #ccc;
-    }
-
-    th, td {
-      padding: 0.5rem;
-      text-align: center;
-    }
-
-    .match-info {
-      margin-bottom: 2rem;
-    }
-
-    .venue-time {
-      font-size: 0.9rem;
-      color: #555;
-      margin-bottom: 2rem;
-    }
-
-    .back-btn {
-      display: block;
-      width: 100%;
-      max-width: 200px;
-      margin: 2rem auto;
-      padding: 1rem;
-      background: #0077cc;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      text-align: center;
-      text-decoration: none;
-    }
-
-    .stage-box {
-      background: white;
-      border-radius: 8px;
-      padding: 1rem;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-      margin-bottom: 2rem;
-    }
+    body {font-family: sans-serif; background: #f5f7fa; margin: 0; padding: 1rem;}
+    .tabs {display: flex; justify-content: center; margin-bottom: 1rem;}
+    .tab {padding: .75rem 1.5rem; cursor: pointer; background: #ddd; margin-right: .25rem; border-radius: 4px 4px 0 0;}
+    .tab.active {background: #0077cc; color: white;}
+    .tab-content {display: none; background: white; padding: 1rem; border-radius: 0 4px 4px 4px;}
+    .tab-content.active {display: block;}
+    h2 {margin-top: 0;}
+    table {width: 100%; border-collapse: collapse; margin-bottom: 1rem;}
+    th, td {border: 1px solid #aaa; padding: .5rem; text-align: center;}
+    .venue-time {font-style: italic; margin-bottom: 1rem;}
+    .match-box {border: 1px solid #ccc; padding: 0.75rem; margin-bottom: .75rem; border-radius: 4px; background: #eef;}
+    .back-btn {display: block; text-align: center; margin-top: 1rem; text-decoration: none; color: #0077cc;}
   </style>
 </head>
 <body>
-
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('group')">Group Stage</div>
-    <div class="tab" onclick="switchTab('next')">Next Stage</div>
+    <div class="tab active" onclick="switchTab('groupTab')">Group Stage</div>
+    <div class="tab" onclick="switchTab('nextTab')">Next Stage</div>
   </div>
-
-  <!-- GROUP STAGE TAB -->
-  <div class="tab-content active" id="group">
-    <div id="groupTablesContainer">
-      <!-- Auto loaded tables A-F -->
-    </div>
-    <div id="matchScheduleContainer">
-      <!-- Matrix format match table goes here -->
-    </div>
-    <div class="venue-time" id="venueTimeContainer">
-      <!-- Venue: .. Time: .. -->
-    </div>
+  <div id="groupTab" class="tab-content active">
+    <h2>Group Stage (A–F)</h2>
+    <div id="groupTables"></div>
+    <h3>Match Matrix</h3>
+    <div id="matrixContainer"></div>
+    <div id="groupVenueTime" class="venue-time"></div>
   </div>
-
-  <!-- NEXT STAGE TAB -->
-  <div class="tab-content" id="next">
+  <div id="nextTab" class="tab-content">
     <h2>Quarter Finals</h2>
-    <div class="stage-box" id="quarterFinals">
-      <!-- Auto filled from top 6 + 2 -->
-    </div>
-
+    <div id="qfContainer"></div>
     <h2>Semi Finals</h2>
-    <div class="stage-box" id="semiFinals">
-      <!-- Admin filled -->
-    </div>
-
+    <div id="sfContainer"></div>
     <h2>Final</h2>
-    <div class="stage-box" id="finalMatch">
-      <!-- Admin filled -->
-    </div>
-
-    <div class="venue-time" id="nextVenueTime">
-      <!-- Venue: ... Time: ... -->
-    </div>
-
-    <a href="index.html" class="back-btn">Back to Main</a>
+    <div id="finalContainer"></div>
+    <div id="knockoutVenueTime" class="venue-time"></div>
+    <a href="index.html" class="back-btn">⬅ Back to Main</a>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
-      authDomain: "unimap-petanque.firebaseapp.com",
-      projectId: "unimap-petanque",
-      storageBucket: "unimap-petanque.appspot.com",
-      messagingSenderId: "578920021890",
-      appId: "1:578920021890:web:987ed2de28e7b0353c999b"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    function switchTab(tab) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-
-      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
-      document.getElementById(tab).classList.add('active');
-    }
-
-    async function loadGroupTables() {
-      const teamsSnap = await getDocs(collection(db, "teams"));
-      const teams = {};
-
-      teamsSnap.forEach(doc => {
-        const data = doc.data();
-        if (!teams[data.group]) teams[data.group] = [];
-        teams[data.group].push(data);
-      });
-
-      const container = document.getElementById("groupTablesContainer");
-      container.innerHTML = "";
-
-      Object.keys(teams).sort().forEach(group => {
-        const table = document.createElement("table");
-        const title = document.createElement("h2");
-        title.textContent = `Group ${group}`;
-        const header = `
-          <tr>
-            <th>Team</th>
-            <th>Played</th>
-            <th>Win</th>
-            <th>Loss</th>
-            <th>Point</th>
-            <th>+ Point</th>
-            <th>- Point</th>
-          </tr>`;
-
-        let rows = "";
-        teams[group].forEach(team => {
-          rows += `<tr>
-            <td>${team.teamName}</td>
-            <td>${team.played || 0}</td>
-            <td>${team.win || 0}</td>
-            <td>${team.loss || 0}</td>
-            <td>${team.points || 0}</td>
-            <td>${team.pointPlus || 0}</td>
-            <td>${team.pointMinus || 0}</td>
-          </tr>`;
-        });
-
-        table.innerHTML = header + rows;
-        container.appendChild(title);
-        container.appendChild(table);
-      });
-    }
-
-    async function loadQuarterFinals() {
-      const res = await getDocs(collection(db, "teams"));
-      const teams = [];
-
-      res.forEach(doc => {
-        const data = doc.data();
-        teams.push(data);
-      });
-
-      const groupWinners = {};
-      const groupSeconds = {};
-
-      const grouped = {};
-      for (const team of teams) {
-        if (!grouped[team.group]) grouped[team.group] = [];
-        grouped[team.group].push(team);
-      }
-
-      for (const group in grouped) {
-        grouped[group].sort((a, b) => (b.points || 0) - (a.points || 0));
-        groupWinners[group] = grouped[group][0];
-        groupSeconds[group] = grouped[group][1];
-      }
-
-      const topWinners = Object.values(groupWinners);
-      const topSeconds = Object.values(groupSeconds)
-        .sort((a, b) => (b.points || 0) - (a.points || 0))
-        .slice(0, 2);
-
-      const allQF = [...topWinners, ...topSeconds].sort(() => Math.random() - 0.5);
-      const qfDiv = document.getElementById("quarterFinals");
-      qfDiv.innerHTML = "";
-
-      for (let i = 0; i < 4; i++) {
-        const team1 = allQF[i * 2];
-        const team2 = allQF[i * 2 + 1];
-        qfDiv.innerHTML += `<p>QF${i + 1}: ${team1.teamName} vs ${team2.teamName}<br><small>Venue: ____ | Time: ____</small></p>`;
-      }
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      loadGroupTables();
-      loadQuarterFinals();
+    const app = initializeApp({
+      apiKey: "...", authDomain: "...", projectId: "unimap-petanque", /* ... */
     });
+    const db = getFirestore(app);
+    const groups = ["A","B","C","D","E","F"];
+
+    function switchTab(id) {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
+      document.querySelector(`.tab[onclick*="'${id}'"]`).classList.add("active");
+      document.getElementById(id).classList.add("active");
+    }
+
+    async function loadGroupStage() {
+      const teamsSnap = await getDocs(collection(db, "teams"));
+      const matchSnap = await getDocs(collection(db, "matchResults"));
+      const venueSnap = await getDocs(collection(db, "venueTime"));
+      const teams = {};
+      teamsSnap.forEach(d => { const v=d.data(); teams[v.group] = teams[v.group]||[]; teams[v.group].push(v); });
+      const matchRes = {};
+      matchSnap.forEach(d => matchRes[d.id] = d.data());
+      const venues = {};
+      venueSnap.forEach(d => venues[d.id] = d.data());
+      const gdiv = document.getElementById("groupTables");
+      gdiv.innerHTML="";
+      for (let g of groups) {
+        if (!teams[g]) continue;
+        let html = `<table><caption>Group ${g}</caption><tr><th>Team</th><th>Played</th><th>Win</th><th>Loss</th><th>Pts</th><th>+Pt</th><th>-Pt</th></tr>`;
+        teams[g].forEach(t => html += `<tr><td>${t.teamName}</td><td>${t.played||0}</td><td>${t.win||0}</td><td>${t.loss||0}</td><td>${t.points||0}</td><td>${t.pointPlus||0}</td><td>${t.pointMinus||0}</td></tr>`);
+        html += `</table>`;
+        gdiv.innerHTML += html;
+      }
+
+      const mid = document.getElementById("matrixContainer");
+      mid.innerHTML="";
+      for (let g of groups) {
+        if (!teams[g]) continue;
+        let html = `<h4>Group ${g}</h4><table><tr><th></th>`;
+        teams[g].forEach(t => html += `<th>${t.teamName}</th>`); html += `</tr>`;
+        teams[g].forEach(r => {
+          html += `<tr><th>${r.teamName}</th>`;
+          teams[g].forEach(c => {
+            if (r.teamName===c.teamName) html+=`<td>-</td>`;
+            else {
+              const k = `${g}_${r.teamName}_vs_${c.teamName}`;
+              const s = matchRes[k]?.score || "-";
+              html+=`<td>${s}</td>`;
+            }
+          });
+          html += `</tr>`;
+        });
+        html += `</table>`;
+        mid.innerHTML += html;
+      }
+      const vtDiv = document.getElementById("groupVenueTime"); vtDiv.innerHTML = "";
+      groups.forEach(g=>{ if(venues[g]) vtDiv.innerHTML+=`Group ${g}: Venue - ${venues[g].venue}, Time - ${venues[g].time}<br>` });
+    }
+
+    async function loadNextStage() {
+      const tSnap = await getDocs(collection(db, "teams"));
+      const tArr = [];
+      tSnap.forEach(d=> tArr.push(d.data()));
+      const grp = {}; groups.forEach(g=> grp[g]=[]);
+      tArr.forEach(t=> grp[t.group].push(t));
+      const winners = [], seconds=[];
+      for (let g of groups) {
+        grp[g].sort((a,b)=> (b.points||0)-(a.points||0));
+        if (grp[g][0]) winners.push(grp[g][0]);
+        if (grp[g][1]) seconds.push(grp[g][1]);
+      }
+      seconds.sort((a,b)=>(b.points||0)-(a.points||0));
+      const qf = [...winners, ...seconds.slice(0,2)].sort(()=> Math.random()-0.5);
+      const qDiv = document.getElementById("qfContainer"); qDiv.innerHTML="";
+      for (let i=0;i<4;i++){
+        qDiv.innerHTML += `<div class="match-box">QF${i+1}: ${qf[i*2].teamName} vs ${qf[i*2+1].teamName}<br><small>Venue: TBD | Time: TBD</small></div>`;
+      }
+    }
+
+    loadGroupStage(); loadNextStage();
   </script>
 </body>
 </html>
