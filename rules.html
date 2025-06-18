@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Undang-undang Pertandingan</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f4f8; /* Light gray background */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between; /* Space out content and footer */
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+            padding: 20px;
+        }
+        .main-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            text-align: left; /* Align text to left for readability */
+            max-width: 800px; /* Wider for content */
+            width: 100%;
+            margin-top: 20px; /* Add some space from top */
+            margin-bottom: 20px; /* Add some space before footer */
+            counter-reset: section-counter; /* Initialize main section counter */
+        }
+        h1 {
+            color: #3182ce; /* A slightly darker blue for main heading (Tailwind blue-600) */
+            margin-bottom: 2rem;
+            font-size: 2.5rem; /* Larger heading */
+            font-weight: 700;
+            text-align: center; /* Center the main title */
+            border-bottom: 3px solid #3182ce; /* Thicker border for main title, matching color */
+            padding-bottom: 0.75rem; /* Slightly more padding than h2 */
+        }
+        h1::before {
+            counter-increment: section-counter;
+            content: counter(section-counter) ". ";
+        }
+        h2 {
+            color: #4299e1; /* Blue for subheadings (Tailwind blue-500) */
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #4299e1; /* Border matching color */
+            padding-bottom: 0.5rem;
+            text-align: center; /* Center the Format Pertandingan title */
+        }
+        h2::before {
+            counter-increment: section-counter;
+            content: counter(section-counter) ". ";
+        }
+        ol {
+            list-style-type: none; /* Remove default list styling */
+            margin-left: 0; /* Remove default margin */
+            padding-left: 0; /* Remove default padding */
+            margin-bottom: 1rem;
+            counter-reset: item-counter; /* Reset item counter for each ol */
+        }
+        ol li {
+            margin-bottom: 0.75rem;
+            color: #2d3748;
+            line-height: 1.6;
+            padding-left: 2em; /* Indent list items for the custom counter */
+            text-indent: -2em; /* Negative indent to pull the number back */
+        }
+        ol li::before {
+            counter-increment: item-counter;
+            content: counter(section-counter) "." counter(item-counter) " ";
+            font-weight: bold; /* Make the numbering stand out */
+            color: #4299e1; /* Match the heading color */
+            display: inline-block;
+            width: 2em; /* Ensure consistent width for numbering */
+            text-align: right; /* Align numbers to the right */
+            margin-right: 0.5em; /* Space between number and text */
+        }
+        .back-button {
+            background-color: #6b7280; /* Gray 500 */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease-in-out;
+            margin-top: 2rem;
+            display: inline-block; /* Make it behave like a block for margin, but allows centering */
+            text-align: center;
+        }
+        .back-button:hover {
+            background-color: #4a5568; /* Gray 600 */
+        }
+        .footer {
+            margin-top: 20px; /* Add space above footer */
+            padding-top: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #777;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen items-center justify-between">
+    <div class="main-container">
+        <h1>Undang-undang Pertandingan</h1>
+        <ol>
+            <li>Pemain hendaklah merupakan pelajar UniMAP yang mendaftar dengan subjek kokurikulum SMZ18201: Petanque sahaja. Pemain dari luar tidak dibenarkan. Semua pelajar yang mendaftar dengan subjek SMZ18201: Petanque adalah diwajibkan menyertai pertandingan ini.</li>
+            <li>Kategori pemain adalah Double iaitu setiap pasukan perlu ada 2 pemain. Pemain campuran (Lelaki/Perempuan) adalah dibenarkan.</li>
+            <li>Setiap pemain perlu mengisi borang pendaftaran yang telah disediakan melalui pautan google drive.</li>
+            <li>Setiap pasukan perlu melantik ketua pasukan. Ketua pasukan dikehendaki membuat undian bagi menentukan Kumpulan (Group) secara atas talian melalui pautan yang diberikan.</li>
+        </ol>
+
+        <h2>Format Pertandingan</h2>
+        <ol>
+            <li>Selepas undian, setiap pasukan akan diletakkan secara rawak di dalam 6 kumpulan yang terdiri daripada Group A hingga Group F.</li>
+            <li>Setiap pasukan akan di berikan nama kumpulan seperti A1,A2,B3,C5,F4.</li>
+            <li>Pada peringkat kumpulan, setiap pasukan akan bermain secara round-robin iaitu setiap pasukan akan menentang semua pasukan dalam kumpulan masing-masing.</li>
+            <li>Masa bagi setiap perlawanan adalah selama 30 Minit sahaja. Pasukan yang memperolehi 9 mata terawal akan di istihar pemenang. Sekiranya masa perlawanan telah tamat, pasukan dengan mata tertinggi akan dikira pemenang.</li>
+            <li>Pemenang akan mendapat 3 mata, sekiranya seri akan mendapat 1 mata, dan pasukan yang kalah akan mendapat 0 mata.</li>
+            <li>Setiap juara bagi 6 kumpulan akan layak ke perlawanan suku akhir, dan di ikuti 2 pasukan naib juara terbaik yang akan di tentukan berdasarkan jumlah kutipan mata, sekiranya sama, jumlah score dan perbezaan score akan di ambil kira. Pasukan yang mempunyai jumlah score dan perbezaan score yang tertinggi akan layak ke pusingan suku akhir. Sekiranya sama juga, perlawanan khas antara naib juara terbaik akan diadakan dan pasukan yang menang akan mendapat 1 point dan layak ke peringkat seterusnya.</li>
+            <li>Peringkat suku akhir hingga akhir akan di adakan secara kalah mati. Masa perlawanan adalah selama 45 Minit dengan kiraan mata maksimum 13 mata.</li>
+            <li>Sekirnya pemain tidak hadir atau lewat ketika perlawanan, untuk setiap 10 minit pertama pasukan lawan akan mendapat 1 mata. Kemenangan 9-0 akan diberikan sekiranya pasukan tidak hadir dalam tempoh 30 minit perlawanan.</li>
+            <li>Sebarang rayuan perlu dikemukakan kepada ketua urusetia pada hari pertandingan. Sebarang keputusan adalah muktamad.</li>
+            <li>Sekiranya hujan pada hari perlawanan, perlawanan akan di tangguhkan seketika atau ke minggu perjumpaan yang seterusnya.</li>
+        </ol>
+
+        <div class="text-center"> <!-- Center the back button -->
+            <button onclick="location.href='index.html'" class="back-button">
+                ⬅ Back to Homepage
+            </button>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2025 Fndism. All rights reserved.</p>
+    </div>
+</body>
+</html>
