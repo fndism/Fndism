@@ -9,7 +9,31 @@
       font-family: Arial, sans-serif;
       background: #f8f9fa;
       padding: 20px;
+      position: relative; /* Needed for absolute positioning of back link */
     }
+    h1 {
+      text-align: center;
+      color: #343a40;
+      margin-bottom: 30px;
+    }
+    /* Move Back to Main link to the top-left corner */
+    .top-back-link {
+        position: absolute; /* Position it relative to the body */
+        top: 20px; /* Distance from the top */
+        left: 20px; /* Distance from the left */
+        padding: 10px 15px; /* Slightly adjusted padding */
+        background: #6c757d; /* Grey background */
+        color: white;
+        border-radius: 5px;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+        z-index: 10; /* Ensure it stays on top of other elements */
+        font-weight: bold;
+    }
+    .top-back-link:hover {
+        background: #5a6268;
+    }
+
     .tabs {
       display: flex;
       gap: 10px;
@@ -41,11 +65,6 @@
     }
     .tab-content.active {
       display: block;
-    }
-    h1 {
-      text-align: center;
-      color: #343a40;
-      margin-bottom: 30px;
     }
     h2 {
       color: #007bff;
@@ -97,22 +116,6 @@
       color: #6c757d;
       font-size: 0.9em;
     }
-    a.back-link {
-      display: block;
-      margin-top: 30px;
-      padding: 10px 20px;
-      background: #6c757d; /* Grey background for back link */
-      color: white;
-      border-radius: 5px;
-      text-decoration: none;
-      width: fit-content; /* Make button fit content */
-      margin-left: auto;
-      margin-right: auto;
-      transition: background-color 0.3s ease;
-    }
-    a.back-link:hover {
-        background: #5a6268; /* Darker grey on hover */
-    }
     /* Specific styling for the Match Matrix table */
     .match-matrix-table td.empty-cell {
         background-color: #eee;
@@ -121,16 +124,187 @@
         font-weight: bold;
         color: #0056b3;
     }
+
+    /* --- Knockout Bracket Styling --- */
+    .tournament-bracket {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* QF, SF, Final */
+        gap: 10px;
+        max-width: 900px; /* Max width for the bracket */
+        margin: 20px auto;
+        padding: 20px;
+        background: #fdfdfd;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    .bracket-stage {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around; /* Distribute matches evenly */
+        padding: 10px 0;
+    }
+    .bracket-stage.quarter-finals-stage {
+        grid-column: 1 / 2; /* First column */
+    }
+    .bracket-stage.semi-finals-stage {
+        grid-column: 2 / 3; /* Second column */
+    }
+    .bracket-stage.final-stage {
+        grid-column: 3 / 4; /* Third column */
+        justify-content: center; /* Center the final match */
+    }
+
+    .bracket-match {
+        background: #e9f5ff; /* Light blue for match boxes */
+        border: 1px solid #cceeff;
+        border-radius: 8px;
+        padding: 10px;
+        margin: 10px 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        position: relative; /* For connecting lines */
+        min-height: 80px; /* Ensure consistent height */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .bracket-match .teams {
+        font-weight: bold;
+        color: #333;
+        font-size: 0.95em;
+    }
+    .bracket-match .score {
+        color: #dc3545;
+        font-weight: bold;
+        font-size: 0.9em;
+        margin-top: 5px;
+    }
+    .bracket-match .venue-time {
+        font-size: 0.8em;
+        color: #666;
+        margin-top: 5px;
+    }
+
+    /* Connecting Lines */
+    /* QF to SF */
+    .bracket-match::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: -10px; /* Half of gap */
+        width: 10px; /* Half of gap */
+        height: 1px;
+        background: #999;
+        transform: translateY(-50%);
+    }
+
+    /* SF to Final (more complex, needs specific styling for SF matches) */
+    .bracket-stage.semi-finals-stage .bracket-match {
+        /* Line going right from SF match */
+    }
+    .bracket-stage.quarter-finals-stage .bracket-match:nth-child(odd)::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: -30px; /* Extend into the gap */
+        width: 20px;
+        height: 50%;
+        border-right: 1px solid #999;
+        border-top: 1px solid #999;
+    }
+    .bracket-stage.quarter-finals-stage .bracket-match:nth-child(even)::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: -30px; /* Extend into the gap */
+        width: 20px;
+        height: 50%;
+        border-right: 1px solid #999;
+        border-bottom: 1px solid #999;
+    }
+    .bracket-stage.quarter-finals-stage .bracket-match:nth-child(odd) + .bracket-match::before {
+        top: 0; /* Reset for the even match following an odd one */
+    }
+
+    /* Lines connecting QF pairs to SF matches */
+    /* This requires more precise positioning using pseudo-elements on SF matches or a more advanced bracket library */
+    /* For simplicity, I'll add basic horizontal lines and a vertical stub for SF/Final */
+
+    /* Basic lines for QF to SF */
+    .quarter-finals-stage .bracket-match::after { /* Line from QF match to right */
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: -5px; /* Connects to the next stage container boundary */
+        width: 5px;
+        height: 1px;
+        background: #999;
+        transform: translateY(-50%);
+        z-index: 1;
+    }
+
+    /* Simple lines to represent connection. Full dynamic lines are very complex with pure CSS. */
+    .semi-finals-stage .bracket-match::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: -5px;
+        width: 5px;
+        height: 1px;
+        background: #999;
+        transform: translateY(-50%);
+        z-index: 1;
+    }
+
+    /* Vertical connector for SF to Final */
+    .semi-finals-stage .bracket-match:first-child::before {
+        content: '';
+        position: absolute;
+        bottom: -15px; /* Adjust based on match spacing */
+        left: 50%;
+        width: 1px;
+        height: 30px; /* Length of vertical line */
+        background: #999;
+        transform: translateX(-50%);
+        z-index: 0;
+    }
+    
+    /* Hide lines for placeholder/empty messages */
+    .bracket-match.no-data-message::after,
+    .bracket-match.no-data-message::before {
+        display: none;
+    }
+
+
+    @media (max-width: 768px) {
+        .tournament-bracket {
+            grid-template-columns: 1fr; /* Stack columns on smaller screens */
+        }
+        .bracket-stage {
+            border-bottom: 1px solid #eee; /* Separate stages */
+            margin-bottom: 10px;
+        }
+        .bracket-stage:last-child {
+            border-bottom: none;
+        }
+        .bracket-match::after,
+        .bracket-match::before,
+        .semi-finals-stage .bracket-match::before {
+            display: none; /* Hide lines on mobile */
+        }
+    }
   </style>
 </head>
 <body>
+  <a href="index.html" class="top-back-link">⬅ Back to Main</a>
   <h1>Petanque Tournament Results</h1>
 
   <div class="tabs">
     <!-- Group Stage tab - now active by default -->
-    <div class="tab active" onclick="switchTab('groupStage')">Group Stage</div>
+    <div class="tab active" onclick="window.switchTab('groupStage')">Group Stage</div>
     <!-- Next Stage tab - now inactive by default -->
-    <div class="tab" onclick="switchTab('nextStage')">Next Stage</div>
+    <div class="tab" onclick="window.switchTab('nextStage')">Next Stage</div>
   </div>
 
   <!-- Group Stage Content - now active by default -->
@@ -143,22 +317,29 @@
 
   <!-- Next Stage Content - now inactive by default -->
   <div id="nextStage" class="tab-content">
-    <h2>Quarter Final</h2>
-    <div class="knockout" id="quarterFinals">Loading Quarter Final matches...</div>
+    <!-- Tournament Bracket Container -->
+    <div class="tournament-bracket">
+        <div class="bracket-stage quarter-finals-stage">
+            <h2>Quarter Final</h2>
+            <div id="quarterFinals">Loading Quarter Final matches...</div>
+        </div>
 
-    <h2>Semi Final</h2>
-    <div class="knockout" id="semiFinals">Loading Semi Final matches...</div>
+        <div class="bracket-stage semi-finals-stage">
+            <h2>Semi Final</h2>
+            <div id="semiFinals">Loading Semi Final matches...</div>
+        </div>
 
-    <h2>Final</h2>
-    <div class="knockout" id="finalMatch">Loading Final match...</div>
-
-    <a href="index.html" class="back-link">⬅ Back to Main</a>
+        <div class="bracket-stage final-stage">
+            <h2>Final</h2>
+            <div id="finalMatch">Loading Final match...</div>
+        </div>
+    </div>
   </div>
 
   <script type="module">
     // Firebase configuration and initialization
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js"; // Added doc and getDoc
+    import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
@@ -172,71 +353,191 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Define groups array, similar to your admin page
+    // Define groups array
     const groups = ["A", "B", "C", "D", "E", "F"];
 
-    /**
-     * Function to switch between different tabs (Next Stage, Group Stage).
-     * It handles adding/removing 'active' classes for both tab buttons and content.
-     * @param {string} tabId - The ID of the tab content to activate (e.g., 'nextStage', 'groupStage').
-     */
     // Make switchTab globally accessible
     window.switchTab = function(tabId) {
-      // Deactivate all tab buttons
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      // Deactivate all tab content sections
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      
-      // Activate the clicked tab button
-      document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
-      // Activate the corresponding tab content
+      document.querySelector(`.tab[onclick="window.switchTab('${tabId}')"]`).classList.add('active');
       document.getElementById(tabId).classList.add('active');
     }
 
-    // --- Firebase Data Fetching Functions ---
+    // Helper function to compare team standings for sorting.
+    function compareTeamStandings(a, b) {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.difference !== a.difference) return b.difference - a.difference;
+        if (b.scoreFor !== a.scoreFor) return b.scoreFor - a.scoreFor;
+        return a.teamName.localeCompare(b.teamName);
+    }
 
-    /**
-     * Fetches and displays data for the Next Stage (Quarter, Semi, Final).
-     * Assumes knockout data is stored in sub-collections like:
-     * knockoutMatches/quarter_finals/matches
-     * knockoutMatches/semi_finals/matches
-     * knockoutMatches/final/matches
-     */
+    // Fetches and processes all group stage data
+    async function getGroupStageData() {
+        const result = {
+            standingsByGroup: {},
+            matchesByGroup: {},
+            teamsByGroup: {}
+        };
+
+        const teamsSnapshot = await getDocs(collection(db, "teams"));
+        teamsSnapshot.forEach(doc => {
+            const data = doc.data();
+            const group = data.group;
+            const teamName = data.teamName;
+            if (group && teamName) {
+                if (!result.teamsByGroup[group]) result.teamsByGroup[group] = [];
+                result.teamsByGroup[group].push(teamName);
+            }
+        });
+
+        for (const group of groups) {
+            const groupDocRef = doc(db, "matchResults", group);
+            const groupDocSnap = await getDoc(groupDocRef);
+
+            const groupTeams = result.teamsByGroup[group] || [];
+            groupTeams.sort();
+
+            const standings = {};
+            groupTeams.forEach(teamName => {
+                standings[teamName] = {
+                    teamName: teamName,
+                    played: 0, wins: 0, losses: 0, draws: 0,
+                    points: 0, scoreFor: 0, scoreAgainst: 0, difference: 0
+                };
+            });
+
+            if (groupDocSnap.exists() && groupDocSnap.data().matches) {
+                const matches = groupDocSnap.data().matches;
+                result.matchesByGroup[group] = matches;
+                
+                for (const matchKey in matches) {
+                    if (matches.hasOwnProperty(matchKey)) {
+                        const scoreStr = matches[matchKey];
+                        const parts = matchKey.replace(/_/g, ' ').split(' vs ');
+                        let teamA = parts[0] ? parts[0].trim() : null;
+                        let teamB = parts[1] ? parts[1].trim() : null;
+
+                        if (!teamA || !teamB || !standings[teamA] || !standings[teamB]) {
+                            console.warn(`Skipping match ${matchKey} in group ${group}: Team data not found or invalid.`);
+                            continue;
+                        }
+
+                        const scoreParts = scoreStr.split('-');
+                        if (scoreParts.length === 2) {
+                            let scoreA = parseInt(scoreParts[0]);
+                            let scoreB = parseInt(scoreParts[1]);
+
+                            if (!isNaN(scoreA) && !isNaN(scoreB)) {
+                                standings[teamA].played++; standings[teamB].played++;
+                                standings[teamA].scoreFor += scoreA; standings[teamA].scoreAgainst += scoreB;
+                                standings[teamB].scoreFor += scoreB; standings[teamB].scoreAgainst += scoreA;
+
+                                if (scoreA > scoreB) {
+                                    standings[teamA].wins++; standings[teamB].losses++; standings[teamA].points += 3;
+                                } else if (scoreB > scoreA) {
+                                    standings[teamB].wins++; standings[teamA].losses++; standings[teamB].points += 3;
+                                } else {
+                                    standings[teamA].draws++; standings[teamB].draws++;
+                                    standings[teamA].points += 1; standings[teamB].points += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            let sortedStandings = Object.values(standings).map(teamStat => {
+                teamStat.difference = teamStat.scoreFor - teamStat.scoreAgainst;
+                return teamStat;
+            }).sort(compareTeamStandings);
+
+            result.standingsByGroup[group] = sortedStandings;
+        }
+        return result;
+    }
+
+    // Fetches and displays data for the Next Stage (Quarter, Semi, Final).
     async function fetchNextStageData() {
         try {
-            // Quarter Finals
-            const quarterFinalsCollection = collection(db, "knockoutMatches", "quarter_finals", "matches");
-            const qfSnapshot = await getDocs(quarterFinalsCollection);
-            let qfHtml = "<h3>Quarter Finals</h3>";
-            if (qfSnapshot.empty) {
-                qfHtml += "<p>No Quarter Final matches scheduled or played yet.</p>";
-            } else {
-                qfSnapshot.forEach(doc => {
-                    const match = doc.data();
-                    const teamA = match.teamA || "TBD";
-                    const teamB = match.teamB || "TBD";
-                    const scoreA = match.scoreA !== undefined ? match.scoreA : '';
-                    const scoreB = match.scoreB !== undefined ? match.scoreB : '';
-                    const venue = match.venue || "TBD";
-                    const time = match.time || "TBD";
+            const { standingsByGroup } = await getGroupStageData();
 
-                    qfHtml += `<div class="match-info">
-                                    <p class="teams">${teamA} vs ${teamB}</p>
-                                    <p class="score">Score: ${scoreA} - ${scoreB}</p>
+            let groupWinners = [];
+            let allRunnersUp = [];
+
+            for (const group of groups) {
+                const groupStandings = standingsByGroup[group];
+                if (groupStandings && groupStandings.length >= 1) {
+                    groupWinners.push(groupStandings[0]);
+                    if (groupStandings.length >= 2) {
+                        allRunnersUp.push(groupStandings[1]);
+                    }
+                }
+            }
+
+            allRunnersUp.sort(compareTeamStandings);
+            const top2RunnersUp = allRunnersUp.slice(0, 2);
+
+            let qualifiers = [...groupWinners, ...top2RunnersUp];
+            qualifiers.sort(compareTeamStandings);
+
+            // Fetch actual knockout match results if they exist (for SF/Final)
+            const knockoutMatches = {
+                quarter_finals: await getDocs(collection(db, "knockoutMatches", "quarter_finals", "matches")),
+                semi_finals: await getDocs(collection(db, "knockoutMatches", "semi_finals", "matches")),
+                final: await getDocs(collection(db, "knockoutMatches", "final", "matches"))
+            };
+
+            // --- Quarter Finals ---
+            let qfHtml = "";
+            if (qualifiers.length >= 8) {
+                // Pairings: Rank 1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6
+                const qfPairings = [
+                    { teamA: qualifiers[0], teamB: qualifiers[7] },
+                    { teamA: qualifiers[3], teamB: qualifiers[4] },
+                    { teamA: qualifiers[1], teamB: qualifiers[6] },
+                    { teamA: qualifiers[2], teamB: qualifiers[5] }
+                ];
+
+                qfPairings.forEach((pairing, index) => {
+                    const matchId = `QF${index + 1}`; // e.g., QF1, QF2
+                    let score = "- (No Data)";
+                    let venue = "TBD";
+                    let time = "TBD";
+                    
+                    // Try to find actual match result
+                    knockoutMatches.quarter_finals.forEach(doc => {
+                        const match = doc.data();
+                        if ((match.teamA === pairing.teamA.teamName && match.teamB === pairing.teamB.teamName) ||
+                            (match.teamA === pairing.teamB.teamName && match.teamB === pairing.teamA.teamName)) {
+                            score = `${match.scoreA !== undefined ? match.scoreA : ''} - ${match.scoreB !== undefined ? match.scoreB : ''}`;
+                            venue = match.venue || "TBD";
+                            time = match.time || "TBD";
+                        }
+                    });
+
+                    qfHtml += `<div class="bracket-match">
+                                    <p class="teams">${pairing.teamA.teamName} vs ${pairing.teamB.teamName}</p>
+                                    <p class="score">Score: ${score}</p>
                                     <p class="venue-time">Venue: ${venue}, Time: ${time}</p>
                                 </div>`;
                 });
+            } else {
+                qfHtml += `<div class="bracket-match no-data-message"><p>Not enough teams qualified for Quarter Finals yet (Need 8 teams).</p>`;
+                qfHtml += `<p>Qualified so far (${qualifiers.length}/8):</p>`;
+                qualifiers.forEach(team => {
+                    qfHtml += `<p>- ${team.teamName} (Points: ${team.points}, Diff: ${team.difference})</p>`;
+                });
+                qfHtml += `</div>`; // Close bracket-match for the info message
             }
             document.getElementById('quarterFinals').innerHTML = qfHtml;
 
-            // Semi Finals
-            const semiFinalsCollection = collection(db, "knockoutMatches", "semi_finals", "matches");
-            const sfSnapshot = await getDocs(semiFinalsCollection);
-            let sfHtml = "<h3>Semi Finals</h3>";
-            if (sfSnapshot.empty) {
-                sfHtml += "<p>No Semi Final matches scheduled or played yet.</p>";
+            // --- Semi Finals ---
+            let sfHtml = "";
+            if (knockoutMatches.semi_finals.empty) {
+                sfHtml += `<div class="bracket-match no-data-message"><p>No Semi Final matches scheduled or played yet.</p></div>`;
             } else {
-                sfSnapshot.forEach(doc => {
+                knockoutMatches.semi_finals.forEach(doc => {
                     const match = doc.data();
                     const teamA = match.teamA || "TBD";
                     const teamB = match.teamB || "TBD";
@@ -245,7 +546,7 @@
                     const venue = match.venue || "TBD";
                     const time = match.time || "TBD";
 
-                    sfHtml += `<div class="match-info">
+                    sfHtml += `<div class="bracket-match">
                                     <p class="teams">${teamA} vs ${teamB}</p>
                                     <p class="score">Score: ${scoreA} - ${scoreB}</p>
                                     <p class="venue-time">Venue: ${venue}, Time: ${time}</p>
@@ -254,14 +555,12 @@
             }
             document.getElementById('semiFinals').innerHTML = sfHtml;
 
-            // Final Match
-            const finalCollection = collection(db, "knockoutMatches", "final", "matches");
-            const finalSnapshot = await getDocs(finalCollection);
-            let finalHtml = "<h3>Final</h3>";
-            if (finalSnapshot.empty) {
-                finalHtml += "<p>No Final match scheduled or played yet.</p>";
+            // --- Final ---
+            let finalHtml = "";
+            if (knockoutMatches.final.empty) {
+                finalHtml += `<div class="bracket-match no-data-message"><p>No Final match scheduled or played yet.</p></div>`;
             } else {
-                finalSnapshot.forEach(doc => {
+                knockoutMatches.final.forEach(doc => {
                     const match = doc.data();
                     const teamA = match.teamA || "TBD";
                     const teamB = match.teamB || "TBD";
@@ -270,7 +569,7 @@
                     const venue = match.venue || "TBD";
                     const time = match.time || "TBD";
 
-                    finalHtml += `<div class="match-info">
+                    finalHtml += `<div class="bracket-match">
                                     <p class="teams">${teamA} vs ${teamB}</p>
                                     <p class="score">Score: ${scoreA} - ${scoreB}</p>
                                     <p class="venue-time">Venue: ${venue}, Time: ${time}</p>
@@ -281,130 +580,23 @@
 
         } catch (error) {
             console.error("Error fetching Next Stage data: ", error);
-            document.getElementById('quarterFinals').innerHTML = "<p>Error loading Quarter Final data.</p>";
-            document.getElementById('semiFinals').innerHTML = "<p>Error loading Semi Final data.</p>";
-            document.getElementById('finalMatch').innerHTML = "<p>Error loading Final data.</p>";
+            document.getElementById('quarterFinals').innerHTML = `<div class="bracket-match no-data-message"><p>Error loading Quarter Final data.</p></div>`;
+            document.getElementById('semiFinals').innerHTML = `<div class="bracket-match no-data-message"><p>Error loading Semi Final data.</p></div>`;
+            document.getElementById('finalMatch').innerHTML = `<div class="bracket-match no-data-message"><p>Error loading Final data.</p></div>`;
         }
     }
 
-    /**
-     * Fetches and displays data for the Group Stage (tables and match matrix).
-     * Assumes match results are stored under 'matchResults' collection,
-     * with each group as a document (e.g., 'matchResults/A').
-     * Each group document has 'venue', 'time', and a 'matches' object.
-     * Also fetches team names from 'teams' collection to build the matrix.
-     */
+    // Fetches and displays data for the Group Stage (tables and match matrix).
     async function fetchGroupStageData() {
         try {
+            const { standingsByGroup, matchesByGroup, teamsByGroup } = await getGroupStageData();
+
             let groupTablesHtml = "<h3>Group Stage Tables</h3>";
-
-            // Fetch all teams to get group members
-            const teamsSnapshot = await getDocs(collection(db, "teams"));
-            const teamsByGroup = {};
-            teamsSnapshot.forEach(doc => {
-                const data = doc.data();
-                const group = data.group;
-                const teamName = data.teamName;
-                if (group && teamName) {
-                    if (!teamsByGroup[group]) teamsByGroup[group] = [];
-                    teamsByGroup[group].push(teamName);
-                }
-            });
-
-            // Process standings for each group
             for (const group of groups) {
-                const groupDocRef = doc(db, "matchResults", group);
-                const groupDocSnap = await getDoc(groupDocRef);
-
+                const sortedStandings = standingsByGroup[group] || [];
                 const groupTeams = teamsByGroup[group] || [];
-                groupTeams.sort(); // Sort teams alphabetically for consistent order
 
-                // Initialize standings for current group
-                const standings = {};
-                groupTeams.forEach(teamName => {
-                    standings[teamName] = {
-                        teamName: teamName, // Pastikan teamName ada di sini
-                        played: 0,
-                        wins: 0,
-                        losses: 0,
-                        draws: 0,
-                        points: 0,
-                        scoreFor: 0,
-                        scoreAgainst: 0,
-                        difference: 0
-                    };
-                });
-
-                if (groupDocSnap.exists() && groupDocSnap.data().matches) {
-                    const matches = groupDocSnap.data().matches;
-                    for (const matchKey in matches) {
-                        if (matches.hasOwnProperty(matchKey)) {
-                            const scoreStr = matches[matchKey];
-                            const parts = matchKey.replace(/_/g, ' ').split(' vs ');
-                            let teamA = parts[0] ? parts[0].trim() : null;
-                            let teamB = parts[1] ? parts[1].trim() : null;
-
-                            // Pastikan kedua tim ada dan diinisialisasi dalam klasemen untuk grup ini
-                            if (!teamA || !teamB || !standings[teamA] || !standings[teamB]) {
-                                console.warn(`Skipping match ${matchKey} in group ${group}: Team data not found or invalid.`);
-                                continue;
-                            }
-
-                            const scoreParts = scoreStr.split('-');
-                            if (scoreParts.length === 2) {
-                                let scoreA = parseInt(scoreParts[0]);
-                                let scoreB = parseInt(scoreParts[1]);
-
-                                if (!isNaN(scoreA) && !isNaN(scoreB)) {
-                                    // Update played matches
-                                    standings[teamA].played++;
-                                    standings[teamB].played++;
-
-                                    // Update scores
-                                    standings[teamA].scoreFor += scoreA;
-                                    standings[teamA].scoreAgainst += scoreB;
-                                    standings[teamB].scoreFor += scoreB;
-                                    standings[teamB].scoreAgainst += scoreA;
-
-                                    // Update wins, losses, draws, and points
-                                    if (scoreA > scoreB) {
-                                        standings[teamA].wins++;
-                                        standings[teamB].losses++;
-                                        standings[teamA].points += 3;
-                                    } else if (scoreB > scoreA) {
-                                        standings[teamB].wins++;
-                                        standings[teamA].losses++;
-                                        standings[teamB].points += 3;
-                                    } else { // Draw
-                                        standings[teamA].draws++;
-                                        standings[teamB].draws++;
-                                        standings[teamA].points += 1;
-                                        standings[teamB].points += 1;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Hitung perbedaan dan siapkan untuk penyortiran
-                let sortedStandings = Object.values(standings).map(teamStat => {
-                    teamStat.difference = teamStat.scoreFor - teamStat.scoreAgainst;
-                    return teamStat;
-                }).sort((a, b) => {
-                    // Sort by Points (descending)
-                    if (b.points !== a.points) return b.points - a.points;
-                    // Then by Difference (descending)
-                    if (b.difference !== a.difference) return b.difference - a.difference;
-                    // Then by Score+ (descending)
-                    if (b.scoreFor !== a.scoreFor) return b.scoreFor - a.scoreFor;
-                    // Finally by Team Name (alphabetical ascending)
-                    return a.teamName.localeCompare(b.teamName); // Sekarang 'a.teamName' seharusnya ada
-                });
-
-
-                // Generate HTML for Group Table
-                if (sortedStandings.length > 0 || groupTeams.length > 0) { // Render table even if no matches played
+                if (sortedStandings.length > 0 || groupTeams.length > 0) {
                     groupTablesHtml += `<h4>Group ${group} Standings</h4>`;
                     groupTablesHtml += `<table class="group-standings-table">
                                         <thead>
@@ -436,18 +628,11 @@
                                                 </tr>`;
                         });
                     } else if (groupTeams.length > 0) {
-                        // If teams exist but no matches, display them with 0s
                          groupTeams.forEach(teamName => {
                              groupTablesHtml += `<tr>
                                                      <td>${teamName || 'N/A'}</td>
-                                                     <td>0</td>
-                                                     <td>0</td>
-                                                     <td>0</td>
-                                                     <td>0</td>
-                                                     <td>0</td>
-                                                     <td>0</td>
-                                                     <td>0</td>
-                                                     <td>0</td>
+                                                     <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+                                                     <td>0</td> <td>0</td> <td>0</td> <td>0</td>
                                                  </tr>`;
                          });
                     } else {
@@ -472,7 +657,6 @@
 
                 matchMatrixHtml += `<h4>Group ${group}</h4>`;
 
-                // Always render the table structure
                 if (groupTeams.length > 0) {
                     const venue = groupDocSnap.exists() ? (groupDocSnap.data().venue || 'N/A') : 'N/A';
                     const time = groupDocSnap.exists() ? (groupDocSnap.data().time || 'N/A') : 'N/A';
@@ -481,7 +665,7 @@
                     matchMatrixHtml += `<table class="match-matrix-table">
                                         <thead>
                                             <tr>
-                                                <th></th>`; // Top-left empty cell
+                                                <th></th>`;
                     groupTeams.forEach(team => {
                         matchMatrixHtml += `<th>${team}</th>`;
                     });
@@ -491,11 +675,11 @@
                         matchMatrixHtml += `<tr><th>${rowTeam}</th>`;
                         groupTeams.forEach(colTeam => {
                             if (rowTeam === colTeam) {
-                                matchMatrixHtml += `<td class="empty-cell"></td>`; // Empty diagonal cell
+                                matchMatrixHtml += `<td class="empty-cell"></td>`;
                             } else {
-                                let score = "-"; // Default to '-'
-                                if (groupDocSnap.exists() && groupDocSnap.data().matches) {
-                                    const matches = groupDocSnap.data().matches;
+                                let score = "-";
+                                if (groupDocSnap.exists() && matchesByGroup[group]) {
+                                    const matches = matchesByGroup[group];
                                     const key1 = `${rowTeam}_vs_${colTeam}`;
                                     const key2 = `${colTeam}_vs_${rowTeam}`;
 
@@ -504,7 +688,7 @@
                                     } else if (matches[key2]) {
                                         const parts = matches[key2].split('-');
                                         if (parts.length === 2) {
-                                            score = `${parts[1]}-${parts[0]}`; // Reverse score for display
+                                            score = `${parts[1]}-${parts[0]}`;
                                         } else {
                                             score = matches[key2];
                                         }
@@ -531,12 +715,9 @@
 
     // Call fetch functions when the page loads
     document.addEventListener('DOMContentLoaded', () => {
-        // Initial setup for Group Stage as active tab
         window.switchTab('groupStage'); 
-
         console.log("Fetching Next Stage data...");
         fetchNextStageData(); 
-
         console.log("Fetching Group Stage data...");
         fetchGroupStageData();
     });
