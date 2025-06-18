@@ -73,7 +73,13 @@
     .delete-button:hover {
       background-color: #c53030; /* Red 600 */
     }
-    .back-button {
+    .action-buttons {
+      display: flex;
+      justify-content: center; /* Center the buttons */
+      gap: 1rem; /* Space between buttons */
+      margin-top: 2rem;
+    }
+    .main-action-button { /* General style for main action buttons */
       background-color: #6b7280; /* Gray 500 */
       color: white;
       border: none;
@@ -83,10 +89,15 @@
       font-weight: 600;
       cursor: pointer;
       transition: background-color 0.3s ease-in-out;
-      margin-top: 2rem;
     }
-    .back-button:hover {
+    .main-action-button:hover {
       background-color: #4a5568; /* Gray 600 */
+    }
+    .download-pdf-button { /* Specific style for PDF button */
+      background-color: #dc3545; /* Red for PDF */
+    }
+    .download-pdf-button:hover {
+      background-color: #c82333; /* Darker red on hover */
     }
 
     /* Custom Modal for Confirmation */
@@ -165,7 +176,7 @@
       Team Information
     </h1>
     
-    <table>
+    <table id="teamInfoTable"> <!-- Added ID to the table for PDF generation -->
       <thead>
         <tr>
           <th>Player 1</th>
@@ -180,9 +191,14 @@
       </tbody>
     </table>
 
-    <button onclick="location.href='admin.html'" class="back-button">
-      ⬅ Back
-    </button>
+    <div class="action-buttons">
+      <button onclick="window.downloadPdf()" class="main-action-button download-pdf-button">
+        ⬇ Download as PDF
+      </button>
+      <button onclick="location.href='admin.html'" class="main-action-button">
+        ⬅ Back
+      </button>
+    </div>
   </div>
 
   <div class="footer">
@@ -200,7 +216,12 @@
     </div>
   </div>
 
+  <!-- jsPDF and jspdf-autotable CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
   <script type="module">
+    // Import Firebase modules
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
     import {
       getFirestore, collection, getDocs, doc, deleteDoc
@@ -220,11 +241,13 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const tableBody = document.getElementById("teamTable");
+    // Get DOM elements
+    const teamTableBody = document.getElementById("teamTable");
     const confirmModalOverlay = document.getElementById('confirmModalOverlay');
     const confirmModalMessage = document.getElementById('confirmModalMessage');
     const confirmModalConfirmBtn = document.getElementById('confirmModalConfirmBtn');
     const confirmModalCancelBtn = document.getElementById('confirmModalCancelBtn');
+    const teamInfoTable = document.getElementById('teamInfoTable'); // Reference to the whole table
 
     let currentDeleteId = null; // To store the ID of the team to be deleted
 
@@ -250,13 +273,13 @@
 
     // Function to load and display teams from Firestore
     async function loadTeams() {
-      tableBody.innerHTML = ""; // Clear existing table rows
+      teamTableBody.innerHTML = ""; // Clear existing table rows
       try {
         const snapshot = await getDocs(collection(db, "teams"));
         if (snapshot.empty) {
             const noDataRow = document.createElement("tr");
             noDataRow.innerHTML = `<td colspan="5" class="text-center py-4 text-gray-500">No teams registered yet.</td>`;
-            tableBody.appendChild(noDataRow);
+            teamTableBody.appendChild(noDataRow);
             return;
         }
 
@@ -273,11 +296,11 @@
               <button onclick="window.deleteTeam('${docSnap.id}')" class="delete-button">Delete</button>
             </td>
           `;
-          tableBody.appendChild(row);
+          teamTableBody.appendChild(row);
         });
       } catch (error) {
         console.error("Error loading teams:", error);
-        tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Error loading teams. Please try again.</td></tr>`;
+        teamTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Error loading teams. Please try again.</td></tr>`;
       }
     }
 
@@ -288,18 +311,54 @@
         if (confirmed) {
           try {
             await deleteDoc(doc(db, "teams", currentDeleteId));
-            // Using simple alert for success, consider custom if needed
-            alert("🗑️ Team successfully deleted!"); 
+            alert("🗑️ Team successfully deleted!"); // Using simple alert for success
             loadTeams(); // Reload teams after deletion
           } catch (error) {
             console.error("Error deleting team:", error);
-            // Using simple alert for error
-            alert("Failed to delete team. Please try again."); 
+            alert("Failed to delete team. Please try again."); // Using simple alert for error
           }
         }
         currentDeleteId = null; // Clear the stored ID
       });
     }
+
+    // Global function to download table as PDF
+    window.downloadPdf = function() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // AutoTable options for styling
+        const autoTableOptions = {
+            startY: 20, // Start table below the title
+            headStyles: { fillColor: [66, 153, 225], textColor: 255, fontStyle: 'bold' }, // Blue header
+            alternateRowStyles: { fillColor: [247, 250, 252] }, // Light gray for alternate rows
+            styles: { fontSize: 10, cellPadding: 3, textColor: [45, 55, 72] },
+            columnStyles: {
+                // Ensure the 'Actions' column is not included in the PDF
+                4: { cellWidth: 0, overflow: 'hidden' } // Hide the 5th column (index 4)
+            },
+            didParseCell: function(data) {
+                // Remove buttons from the 'Actions' column content
+                if (data.column.index === 4 && data.cell.raw) {
+                    data.cell.text = []; // Clear the text for this cell
+                }
+            },
+            didDrawPage: function(data) {
+                // Add header on each page
+                doc.setFontSize(16);
+                doc.setTextColor(45, 55, 72);
+                doc.text("Team Information", data.settings.margin.left, 15);
+            }
+        };
+
+        // Add the table to the PDF
+        doc.autoTable(teamInfoTable, autoTableOptions);
+
+        // Save the PDF
+        doc.save('Team_Information.pdf');
+        alert("PDF generated successfully!");
+    };
+
 
     // Load teams when the page is fully loaded
     document.addEventListener('DOMContentLoaded', loadTeams);
