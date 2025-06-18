@@ -1,90 +1,252 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>UniMAP Petanque - Main Menu</title>
-  <style>
-    body {
-      font-family: "Segoe UI", sans-serif;
-      background: #f0f4f8;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
-    h1 {
-      color: #0066cc;
-      margin-bottom: 2rem;
-    }
-    .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    button {
-      padding: 1rem 2rem;
-      background: #0077cc;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1.2rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s, transform 0.2s;
-    }
-    button:hover {
-      background: #005fa3;
-      transform: scale(1.05);
-    }
-    .hidden {
-      display: none;
-    }
-    .login-box {
-      margin-top: 2rem;
-      background: white;
-      padding: 1rem;
-      border-radius: 8px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    input {
-      display: block;
-      width: 100%;
-      padding: 0.5rem;
-      margin: 0.5rem 0;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kejohanan Petanque Tertutup SMZ18201</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f4f8; /* Light gray background */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+            padding: 20px;
+        }
+        .main-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #1a202c; /* Darker text for heading */
+            margin-bottom: 2rem;
+            font-size: 2.5rem; /* Larger heading */
+            font-weight: 700;
+        }
+        .menu-button {
+            display: block;
+            width: 100%;
+            padding: 1.2rem 2.5rem;
+            background: #4299e1; /* Blue 500 */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease-in-out, transform 0.2s ease-in-out;
+            box-shadow: 0 4px 10px rgba(66, 153, 225, 0.3); /* Subtle shadow for buttons */
+        }
+        .menu-button:hover {
+            background: #3182ce; /* Blue 600 */
+            transform: translateY(-3px); /* Slight lift effect */
+        }
+        .menu-button:active {
+            transform: translateY(0);
+        }
+        .login-box {
+            background: #f7fafc; /* Lighter background for login box */
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-top: 1.5rem;
+            width: 100%; /* Make login box take full width within its container */
+        }
+        .login-input {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid #cbd5e0; /* Light gray border */
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .login-button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #38a169; /* Green 500 */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease-in-out;
+        }
+        .login-button:hover {
+            background-color: #2f855a; /* Green 600 */
+        }
+        .error-msg {
+            color: #e53e3e; /* Red 500 */
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .footer {
+            margin-top: auto; /* Push footer to the bottom */
+            padding-top: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #777;
+        }
+    </style>
 </head>
-<body>
-  <h1>UniMAP Petanque System</h1>
-  <div class="menu">
-    <button onclick="location.href='draw.html'">🎯 Draw Group</button>
-    <button onclick="location.href='results.html'">📊 View Match Info</button>
-    <button onclick="document.getElementById('loginBox').classList.toggle('hidden')">🔐 Admin Login</button>
-  </div>
+<body class="flex flex-col min-h-screen items-center justify-between">
+    <div class="main-container">
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-800 mb-8 leading-tight">
+            Kejohanan Petanque Tertutup 2025 SMZ18201
+        </h1>
+        
+        <div class="space-y-4">
+            <button class="menu-button" onclick="location.href='draw.html'">🎯 Draw Group</button>
+            <button class="menu-button" onclick="location.href='results.html'">📊 View Match Info</button>
+            
+            <div id="adminArea">
+                <!-- Content here changes based on login status -->
+            </div>
+        </div>
 
-  <div id="loginBox" class="login-box hidden">
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-    <div id="loginMsg" style="margin-top: 0.5rem; color: red;"></div>
-  </div>
+        <div id="loginBox" class="login-box mt-6 hidden">
+            <input type="email" id="adminEmail" placeholder="Email Admin" class="login-input" />
+            <input type="password" id="adminPassword" placeholder="Kata Laluan" class="login-input" />
+            <button id="loginBtn" class="login-button">Log Masuk</button>
+            <div id="loginMsg" class="error-msg"></div>
+        </div>
+    </div>
 
-  <script>
-    function login() {
-      const user = document.getElementById('username').value;
-      const pass = document.getElementById('password').value;
-      const msg = document.getElementById('loginMsg');
-      if (user === 'admin' && pass === 'unimap25') {
-        window.location.href = 'admin.html';
-      } else {
-        msg.textContent = "❌ Invalid login credentials.";
-      }
-    }
-  </script>
+    <div class="footer">
+        <p>&copy; 2025 Fndism. All rights reserved.</p>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js"; // Import getFirestore if needed
+
+        // Firebase configuration (replace with your actual config)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
+            authDomain: "unimap-petanque.firebaseapp.com",
+            projectId: "unimap-petanque",
+            storageBucket: "unimap-petanque.appspot.com",
+            messagingSenderId: "578920021890",
+            appId: "1:578920021890:web:987ed2de28e7b0353c999b"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app); // Initialize Firestore if you plan to use it here later
+
+        const adminArea = document.getElementById('adminArea');
+        const loginBox = document.getElementById('loginBox');
+        const adminEmailInput = document.getElementById('adminEmail');
+        const adminPasswordInput = document.getElementById('adminPassword');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginMsg = document.getElementById('loginMsg');
+
+        // Function to render UI based on auth state
+        function renderAdminUI(user) {
+            adminArea.innerHTML = ''; // Clear previous content
+            if (user) {
+                // User is signed in
+                adminArea.innerHTML = `
+                    <button class="menu-button bg-green-500 hover:bg-green-600" onclick="location.href='update-match.html'">
+                        ✅ Update Match Results
+                    </button>
+                    <button class="menu-button bg-red-500 hover:bg-red-600 mt-4" id="logoutBtn">
+                        Sign Out
+                    </button>
+                `;
+                loginBox.classList.add('hidden'); // Hide login box
+                document.getElementById('logoutBtn').addEventListener('click', handleSignOut);
+            } else {
+                // User is signed out
+                adminArea.innerHTML = `
+                    <button class="menu-button bg-purple-500 hover:bg-purple-600" onclick="toggleLoginBox()">
+                        🔐 Admin Login
+                    </button>
+                `;
+                loginBox.classList.add('hidden'); // Ensure login box is hidden initially if not logged in
+            }
+        }
+
+        // Handle login attempt
+        loginBtn.addEventListener('click', async () => {
+            const email = adminEmailInput.value;
+            const password = adminPasswordInput.value;
+
+            if (email === '' || password === '') {
+                loginMsg.textContent = "Sila masukkan email dan kata laluan.";
+                return;
+            }
+
+            try {
+                // Set persistence to LOCAL to maintain session across browser tabs/restarts
+                await setPersistence(auth, browserLocalPersistence);
+                await signInWithEmailAndPassword(auth, email, password);
+                loginMsg.textContent = ""; // Clear error message on success
+                // UI will be updated by onAuthStateChanged listener
+            } catch (error) {
+                console.error("Login error:", error);
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                        loginMsg.textContent = "Email atau kata laluan tidak sah.";
+                        break;
+                    case 'auth/invalid-email':
+                        loginMsg.textContent = "Format email tidak sah.";
+                        break;
+                    case 'auth/too-many-requests':
+                        loginMsg.textContent = "Akaun ini telah disekat sementara kerana terlalu banyak percubaan log masuk yang gagal. Sila cuba lagi kemudian.";
+                        break;
+                    default:
+                        loginMsg.textContent = "Ralat log masuk: " + error.message;
+                        break;
+                }
+            }
+        });
+
+        // Handle sign out
+        async function handleSignOut() {
+            try {
+                await signOut(auth);
+                loginMsg.textContent = "Berjaya log keluar.";
+                // UI will be updated by onAuthStateChanged listener
+            } catch (error) {
+                console.error("Logout error:", error);
+                loginMsg.textContent = "Ralat log keluar: " + error.message;
+            }
+        }
+
+        // Toggle login box visibility
+        function toggleLoginBox() {
+            loginBox.classList.toggle('hidden');
+            loginMsg.textContent = ""; // Clear message when toggling
+            adminEmailInput.value = "";
+            adminPasswordInput.value = "";
+        }
+
+        // Listen for authentication state changes
+        onAuthStateChanged(auth, (user) => {
+            renderAdminUI(user);
+        });
+
+        // Initial render when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // onAuthStateChanged will handle the initial UI render
+        });
+    </script>
 </body>
 </html>
