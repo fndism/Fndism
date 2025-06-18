@@ -3,58 +3,210 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin - Group Info</title>
+  <title>Admin - Team Information</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     body {
-      font-family: Arial, sans-serif;
-      padding: 2rem;
-      background: #f0f0f0;
+      font-family: 'Inter', sans-serif;
+      background: #f0f4f8; /* Light gray background */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh; /* Full viewport height */
+      margin: 0;
+      padding: 20px;
+    }
+    .main-container {
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      padding: 2.5rem;
+      text-align: center;
+      max-width: 900px; /* Increased max-width for table */
+      width: 100%;
     }
     h1 {
-      color: #0066cc;
+      color: #1a202c; /* Darker text for heading */
+      margin-bottom: 2rem;
+      font-size: 2.5rem; /* Larger heading */
+      font-weight: 700;
     }
     table {
-      border-collapse: collapse;
       width: 100%;
-      background: white;
+      border-collapse: collapse;
+      margin-top: 1.5rem;
+      border-radius: 8px;
+      overflow: hidden; /* Ensures rounded corners apply to borders */
     }
     th, td {
-      padding: 10px;
-      border: 1px solid #ccc;
+      padding: 12px 15px;
+      border: 1px solid #e2e8f0; /* Light gray border */
       text-align: left;
     }
-    button {
-      margin: 2px;
-      padding: 5px 10px;
-      cursor: pointer;
+    th {
+      background: #4299e1; /* Blue 500 */
+      color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.9em;
     }
-    input[type="text"] {
+    tr:nth-child(even) {
+      background-color: #f7fafc; /* Lighter alternating row */
+    }
+    td {
+      color: #2d3748; /* Darker text for content */
+    }
+    .delete-button {
+      background-color: #e53e3e; /* Red 500 */
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease-in-out;
+    }
+    .delete-button:hover {
+      background-color: #c53030; /* Red 600 */
+    }
+    .back-button {
+      background-color: #6b7280; /* Gray 500 */
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease-in-out;
+      margin-top: 2rem;
+    }
+    .back-button:hover {
+      background-color: #4a5568; /* Gray 600 */
+    }
+
+    /* Custom Modal for Confirmation */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: visibility 0s, opacity 0.3s ease-in-out;
+    }
+    .modal-overlay.visible {
+      visibility: visible;
+      opacity: 1;
+    }
+    .modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      max-width: 400px;
       width: 90%;
-      padding: 5px;
+    }
+    .modal-content p {
+      margin-bottom: 1.5rem;
+      font-size: 1.1rem;
+      color: #2d3748;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+    .modal-button {
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease-in-out;
+    }
+    .modal-button.confirm {
+      background-color: #e53e3e; /* Red 500 */
+      color: white;
+    }
+    .modal-button.confirm:hover {
+      background-color: #c53030; /* Red 600 */
+    }
+    .modal-button.cancel {
+      background-color: #cbd5e0; /* Gray 300 */
+      color: #2d3748;
+    }
+    .modal-button.cancel:hover {
+      background-color: #a0aec0; /* Gray 400 */
+    }
+    .footer {
+        margin-top: auto; /* Push footer to the bottom */
+        padding-top: 20px;
+        text-align: center;
+        font-size: 0.9em;
+        color: #777;
     }
   </style>
 </head>
-<body>
-  <h1>Admin - Group Info</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>Player 1</th>
-        <th>Player 2</th>
-        <th>Team</th>
-        <th>Group</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="teamTable"></tbody>
-  </table>
+<body class="flex flex-col min-h-screen items-center justify-between">
+  <div class="main-container">
+    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-800 mb-8 leading-tight">
+      Team Information
+    </h1>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Player 1</th>
+          <th>Player 2</th>
+          <th>Team Name</th>
+          <th>Group</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="teamTable">
+        <!-- Team data will be loaded here -->
+      </tbody>
+    </table>
+
+    <button onclick="location.href='index.html'" class="back-button">
+      ⬅ Homepage
+    </button>
+  </div>
+
+  <div class="footer">
+    <p>&copy; 2025 Fndism. All rights reserved.</p>
+  </div>
+
+  <!-- Custom Confirmation Modal HTML -->
+  <div id="confirmModalOverlay" class="modal-overlay">
+    <div class="modal-content">
+      <p id="confirmModalMessage"></p>
+      <div class="modal-buttons">
+        <button id="confirmModalConfirmBtn" class="modal-button confirm">Yes, Delete</button>
+        <button id="confirmModalCancelBtn" class="modal-button cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
     import {
-      getFirestore, collection, getDocs, doc, updateDoc, deleteDoc
+      getFirestore, collection, getDocs, doc, deleteDoc
     } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
+    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
       authDomain: "unimap-petanque.firebaseapp.com",
@@ -64,52 +216,93 @@
       appId: "1:578920021890:web:987ed2de28e7b0353c999b"
     };
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     const tableBody = document.getElementById("teamTable");
+    const confirmModalOverlay = document.getElementById('confirmModalOverlay');
+    const confirmModalMessage = document.getElementById('confirmModalMessage');
+    const confirmModalConfirmBtn = document.getElementById('confirmModalConfirmBtn');
+    const confirmModalCancelBtn = document.getElementById('confirmModalCancelBtn');
 
+    let currentDeleteId = null; // To store the ID of the team to be deleted
+
+    // Function to show the custom confirmation modal
+    function showConfirmModal(message, onConfirmCallback) {
+      confirmModalMessage.textContent = message;
+      confirmModalOverlay.classList.add('visible');
+
+      // Clear previous event listeners to prevent multiple calls
+      confirmModalConfirmBtn.onclick = null;
+      confirmModalCancelBtn.onclick = null;
+
+      confirmModalConfirmBtn.onclick = () => {
+        onConfirmCallback(true);
+        confirmModalOverlay.classList.remove('visible');
+      };
+
+      confirmModalCancelBtn.onclick = () => {
+        onConfirmCallback(false);
+        confirmModalOverlay.classList.remove('visible');
+      };
+    }
+
+    // Function to load and display teams from Firestore
     async function loadTeams() {
-      tableBody.innerHTML = "";
-      const snapshot = await getDocs(collection(db, "teams"));
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        const row = document.createElement("tr");
+      tableBody.innerHTML = ""; // Clear existing table rows
+      try {
+        const snapshot = await getDocs(collection(db, "teams"));
+        if (snapshot.empty) {
+            const noDataRow = document.createElement("tr");
+            noDataRow.innerHTML = `<td colspan="5" class="text-center py-4 text-gray-500">No teams registered yet.</td>`;
+            tableBody.appendChild(noDataRow);
+            return;
+        }
 
-        row.innerHTML = `
-          <td><input type="text" value="${data.player1}" id="p1-${docSnap.id}"/></td>
-          <td><input type="text" value="${data.player2}" id="p2-${docSnap.id}"/></td>
-          <td>${data.teamName}</td>
-          <td>${data.group}</td>
-          <td>
-            <button onclick="updateTeam('${docSnap.id}')">Update</button>
-            <button onclick="deleteTeam('${docSnap.id}')">Delete</button>
-          </td>
-        `;
-        tableBody.appendChild(row);
-      });
-    }
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          const row = document.createElement("tr");
 
-    window.updateTeam = async function(id) {
-      const p1 = document.getElementById(`p1-${id}`).value.trim();
-      const p2 = document.getElementById(`p2-${id}`).value.trim();
-      await updateDoc(doc(db, "teams", id), { player1: p1, player2: p2 });
-      alert("✅ Team updated");
-      loadTeams();
-    }
-
-    window.deleteTeam = async function(id) {
-      if (confirm("⚠️ Delete this team?")) {
-        await deleteDoc(doc(db, "teams", id));
-        alert("🗑️ Team deleted");
-        loadTeams();
+          row.innerHTML = `
+            <td class="px-4 py-2">${data.player1 || 'N/A'}</td>
+            <td class="px-4 py-2">${data.player2 || 'N/A'}</td>
+            <td class="px-4 py-2 font-bold">${data.teamName || 'N/A'}</td>
+            <td class="px-4 py-2">${data.group || 'N/A'}</td>
+            <td class="px-4 py-2">
+              <button onclick="window.deleteTeam('${docSnap.id}')" class="delete-button">Delete</button>
+            </td>
+          `;
+          tableBody.appendChild(row);
+        });
+      } catch (error) {
+        console.error("Error loading teams:", error);
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Error loading teams. Please try again.</td></tr>`;
       }
     }
 
-    loadTeams();
-  </script>  <div class="container">
-    <button onclick="location.href='index.html'">Back to Main</button>
-  </div>
-  
+    // Global deleteTeam function (callable from HTML)
+    window.deleteTeam = async function(id) {
+      currentDeleteId = id; // Store the ID
+      showConfirmModal("Are you sure you want to delete this team?", async (confirmed) => {
+        if (confirmed) {
+          try {
+            await deleteDoc(doc(db, "teams", currentDeleteId));
+            // Using simple alert for success, consider custom if needed
+            alert("🗑️ Team successfully deleted!"); 
+            loadTeams(); // Reload teams after deletion
+          } catch (error) {
+            console.error("Error deleting team:", error);
+            // Using simple alert for error
+            alert("Failed to delete team. Please try again."); 
+          }
+        }
+        currentDeleteId = null; // Clear the stored ID
+      });
+    }
+
+    // Load teams when the page is fully loaded
+    document.addEventListener('DOMContentLoaded', loadTeams);
+  </script>
 </body>
 </html>
