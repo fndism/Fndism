@@ -9,7 +9,7 @@
       font-family: Arial, sans-serif;
       background: #f8f9fa;
       padding: 20px;
-      position: relative; /* Needed for absolute positioning of back link */
+      position: relative; /* Needed for absolute positioning of back link - now removed */
       min-height: 100vh; /* Ensure body takes full viewport height for footer positioning */
       display: flex;
       flex-direction: column;
@@ -19,23 +19,7 @@
       color: #343a40;
       margin-bottom: 30px;
     }
-    /* Move Back to Main link to the top-left corner */
-    .top-back-link {
-        position: absolute; /* Position it relative to the body */
-        top: 20px; /* Distance from the top */
-        left: 20px; /* Distance from the left */
-        padding: 10px 15px; /* Slightly adjusted padding */
-        background: #6c757d; /* Grey background */
-        color: white;
-        border-radius: 5px;
-        text-decoration: none;
-        transition: background-color 0.3s ease;
-        z-index: 10; /* Ensure it stays on top of other elements */
-        font-weight: bold;
-    }
-    .top-back-link:hover {
-        background: #5a6268;
-    }
+    /* Removed .top-back-link specific styling as it's now a .tab */
 
     .tabs {
       display: flex;
@@ -120,7 +104,7 @@
       color: #6c757d;
       font-size: 0.9em;
     }
-    /* Specific styling for the Match Matrix table */
+    /* Specific styling for the Match Details table */
     .match-matrix-table td.empty-cell {
         background-color: #eee;
     }
@@ -145,7 +129,7 @@
     .bracket-stage {
         display: flex;
         flex-direction: column;
-        justify-content: space-around; /* Distribute matches evenly */
+        justify-content: space-around; /* Distribute matches evenly by default */
         padding: 10px 0;
     }
     .bracket-stage.quarter-finals-stage {
@@ -153,6 +137,7 @@
     }
     .bracket-stage.semi-finals-stage {
         grid-column: 2 / 3; /* Second column */
+        justify-content: center; /* ALIGNMENT FIX: Center content vertically for semi-finals */
     }
     .bracket-stage.final-stage {
         grid-column: 3 / 4; /* Third column */
@@ -231,10 +216,6 @@
         top: 0; /* Reset for the even match following an odd one */
     }
 
-    /* Lines connecting QF pairs to SF matches */
-    /* This requires more precise positioning using pseudo-elements on SF matches or a more advanced bracket library */
-    /* For simplicity, I'll add basic horizontal lines and a vertical stub for SF/Final */
-
     /* Basic lines for QF to SF */
     .quarter-finals-stage .bracket-match::after { /* Line from QF match to right */
         content: '';
@@ -310,22 +291,20 @@
   </style>
 </head>
 <body>
-  <a href="index.html" class="top-back-link">⬅ Back to Main</a>
   <h1>SMZ18201: Petanque Match Results</h1>
 
   <div class="tabs">
-    <!-- Group Stage tab - now active by default -->
     <div class="tab active" onclick="window.switchTab('groupStage')">Group Stage</div>
-    <!-- Next Stage tab - now inactive by default -->
     <div class="tab" onclick="window.switchTab('nextStage')">Next Stage</div>
+    <div class="tab" onclick="window.location.href='index.html'">⬅ Homepage</div>
   </div>
 
   <!-- Group Stage Content - now active by default -->
   <div id="groupStage" class="tab-content active">
     <h2>Group Stage Tables</h2>
     <div id="groupTables">Loading group tables...</div>
-    <h2>Match Matrix</h2>
-    <div id="matchMatrix">Loading match matrix...</div>
+    <h2>Match Details</h2> <!-- Changed from Match Matrix -->
+    <div id="matchMatrix">Loading match details...</div> <!-- Changed from Match Matrix -->
   </div>
 
   <!-- Next Stage Content - now inactive by default -->
@@ -377,7 +356,14 @@
     window.switchTab = function(tabId) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.querySelector(`.tab[onclick="window.switchTab('${tabId}')"]`).classList.add('active');
+      // Find the tab element by its onclick attribute to apply active class
+      const targetTabElement = document.querySelector(`.tab[onclick*="switchTab('${tabId}')"]`);
+      // Special handling for Homepage tab as it uses window.location.href
+      if (tabId === 'homepage') {
+          document.querySelector(`.tab[onclick*="window.location.href='index.html'"]`).classList.add('active');
+      } else if (targetTabElement) {
+          targetTabElement.classList.add('active');
+      }
       document.getElementById(tabId).classList.add('active');
     }
 
@@ -507,6 +493,7 @@
 
             // --- Quarter Finals ---
             let qfHtml = "";
+            const qfLabels = ["QF1", "QF2", "QF3", "QF4"];
             if (qualifiers.length >= 8) {
                 // Pairings: Rank 1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6
                 const qfPairings = [
@@ -517,7 +504,7 @@
                 ];
 
                 qfPairings.forEach((pairing, index) => {
-                    const matchId = `QF${index + 1}`; // e.g., QF1, QF2
+                    const label = qfLabels[index]; // Get the specific label
                     let score = "- (No Data)";
                     let venue = "TBD";
                     let time = "TBD";
@@ -534,65 +521,110 @@
                     });
 
                     qfHtml += `<div class="bracket-match">
-                                    <p class="teams">${pairing.teamA.teamName} vs ${pairing.teamB.teamName}</p>
+                                    <p class="teams">${label}: ${pairing.teamA.teamName} vs ${pairing.teamB.teamName}</p>
                                     <p class="score">Score: ${score}</p>
                                     <p class="venue-time">Venue: ${venue}, Time: ${time}</p>
                                 </div>`;
                 });
             } else {
-                qfHtml += `<div class="bracket-match no-data-message"><p>Not enough teams qualified for Quarter Finals yet (Need 8 teams).</p>`;
-                qfHtml += `<p>Qualified so far (${qualifiers.length}/8):</p>`;
-                qualifiers.forEach(team => {
-                    qfHtml += `<p>- ${team.teamName} (Points: ${team.points}, Diff: ${team.difference})</p>`;
+                // Generate default QF matches even if not enough qualifiers
+                qfLabels.forEach(label => {
+                    qfHtml += `<div class="bracket-match no-data-message">
+                                <p class="teams">${label}: TBD vs TBD</p>
+                                <p class="score">Score: - (Not enough qualifiers)</p>
+                                <p class="venue-time">Venue: TBD, Time: TBD</p>
+                            </div>`;
                 });
-                qfHtml += `</div>`; // Close bracket-match for the info message
+                qfHtml += `<div class="bracket-match no-data-message" style="margin-top: 10px;"><p>Only ${qualifiers.length}/8 teams qualified so far.</p></div>`; // Consolidated message
             }
             document.getElementById('quarterFinals').innerHTML = qfHtml;
 
             // --- Semi Finals ---
             let sfHtml = "";
-            if (knockoutMatches.semi_finals.empty) {
-                sfHtml += `<div class="bracket-match no-data-message"><p>No Semi Final matches scheduled or played yet.</p></div>`;
-            } else {
-                knockoutMatches.semi_finals.forEach(doc => {
-                    const match = doc.data();
-                    const teamA = match.teamA || "TBD";
-                    const teamB = match.teamB || "TBD";
-                    const scoreA = match.scoreA !== undefined ? match.scoreA : '';
-                    const scoreB = match.scoreB !== undefined ? match.scoreB : '';
-                    const venue = match.venue || "TBD";
-                    const time = match.time || "TBD";
+            const sfLabels = ["SF1", "SF2"];
+            // Default Semi Final pairings if no actual data exists
+            const defaultSfPairings = [
+                { teamA: "Winner QF1", teamB: "Winner QF2" },
+                { teamA: "Winner QF3", teamB: "Winner QF4" }
+            ];
 
-                    sfHtml += `<div class="bracket-match">
-                                    <p class="teams">${teamA} vs ${teamB}</p>
-                                    <p class="score">Score: ${scoreA} - ${scoreB}</p>
-                                    <p class="venue-time">Venue: ${venue}, Time: ${time}</p>
-                                </div>`;
-                });
+            // Ensure two match boxes are always rendered for Semi Finals
+            const semiFinalDocs = [];
+            knockoutMatches.semi_finals.forEach(doc => semiFinalDocs.push(doc.data()));
+
+            for (let i = 0; i < 2; i++) {
+                const label = sfLabels[i];
+                let teamA = "TBD";
+                let teamB = "TBD";
+                let score = "- (No Data)";
+                let venue = "TBD";
+                let time = "TBD";
+                let isNoData = true; // Flag to apply no-data-message class
+
+                if (semiFinalDocs[i]) { // Check if actual data exists for this SF match
+                    const match = semiFinalDocs[i];
+                    teamA = match.teamA || "TBD";
+                    teamB = match.teamB || "TBD";
+                    score = `${match.scoreA !== undefined ? match.scoreA : ''} - ${match.scoreB !== undefined ? match.scoreB : ''}`;
+                    venue = match.venue || "TBD";
+                    time = match.time || "TBD";
+                    isNoData = false; // Data exists, so don't apply no-data-message
+                } else {
+                    // If actual data for this SF match is missing, use default winners
+                    if (i === 0) { // SF1
+                        teamA = defaultSfPairings[0].teamA;
+                        teamB = defaultSfPairings[0].teamB;
+                    } else if (i === 1) { // SF2
+                        teamA = defaultSfPairings[1].teamA;
+                        teamB = defaultSfPairings[1].teamB;
+                    }
+                }
+
+                sfHtml += `<div class="bracket-match ${isNoData ? 'no-data-message' : ''}">
+                                <p class="teams">${label}: ${teamA} vs ${teamB}</p>
+                                <p class="score">Score: ${score}</p>
+                                <p class="venue-time">Venue: ${venue}, Time: ${time}</p>
+                            </div>`;
             }
             document.getElementById('semiFinals').innerHTML = sfHtml;
 
             // --- Final ---
             let finalHtml = "";
-            if (knockoutMatches.final.empty) {
-                finalHtml += `<div class="bracket-match no-data-message"><p>No Final match scheduled or played yet.</p></div>`;
-            } else {
-                knockoutMatches.final.forEach(doc => {
-                    const match = doc.data();
-                    const teamA = match.teamA || "TBD";
-                    const teamB = match.teamB || "TBD";
-                    const scoreA = match.scoreA !== undefined ? match.scoreA : '';
-                    const scoreB = match.scoreB !== undefined ? match.scoreB : '';
-                    const venue = match.venue || "TBD";
-                    const time = match.time || "TBD";
+            const finalLabel = "Final"; // Label for the final match
+            // Default Final pairing if no actual data exists
+            const defaultFinalPairing = { teamA: "Winner SF1", teamB: "Winner SF2" };
 
-                    finalHtml += `<div class="bracket-match">
-                                    <p class="teams">${teamA} vs ${teamB}</p>
-                                    <p class="score">Score: ${scoreA} - ${scoreB}</p>
-                                    <p class="venue-time">Venue: ${venue}, Time: ${time}</p>
-                                </div>`;
-                });
+            // Ensure one match box is always rendered for Final
+            const finalDocs = [];
+            knockoutMatches.final.forEach(doc => finalDocs.push(doc.data()));
+
+            let teamA_final = "TBD";
+            let teamB_final = "TBD";
+            let score_final = "- (No Data)";
+            let venue_final = "TBD";
+            let time_final = "TBD";
+            let isFinalNoData = true;
+
+            if (finalDocs[0]) { // Check if actual data exists for the Final match
+                const match = finalDocs[0];
+                teamA_final = match.teamA || "TBD";
+                teamB_final = match.teamB || "TBD";
+                score_final = `${match.scoreA !== undefined ? match.scoreA : ''} - ${match.scoreB !== undefined ? match.scoreB : ''}`;
+                venue_final = match.venue || "TBD";
+                time_final = match.time || "TBD";
+                isFinalNoData = false;
+            } else {
+                // If actual data is missing, use default winners
+                teamA_final = defaultFinalPairing.teamA;
+                teamB_final = defaultFinalPairing.teamB;
             }
+
+            finalHtml += `<div class="bracket-match ${isFinalNoData ? 'no-data-message' : ''}">
+                            <p class="teams">${finalLabel}: ${teamA_final} vs ${teamB_final}</p>
+                            <p class="score">Score: ${score_final}</p>
+                            <p class="venue-time">Venue: ${venue_final}, Time: ${time_final}</p>
+                        </div>`;
+            
             document.getElementById('finalMatch').innerHTML = finalHtml;
 
         } catch (error) {
@@ -603,7 +635,7 @@
         }
     }
 
-    // Fetches and displays data for the Group Stage (tables and match matrix).
+    // Fetches and displays data for the Group Stage (tables and match details).
     async function fetchGroupStageData() {
         try {
             const { standingsByGroup, matchesByGroup, teamsByGroup } = await getGroupStageData();
@@ -631,6 +663,7 @@
                                         </thead>
                                         <tbody>`;
                     if (sortedStandings.length > 0) {
+                        // Fixed: Changed sortedTablesHtml to groupTablesHtml
                         sortedStandings.forEach(team => {
                             groupTablesHtml += `<tr>
                                                     <td>${team.teamName || 'N/A'}</td>
@@ -663,8 +696,8 @@
             document.getElementById('groupTables').innerHTML = groupTablesHtml;
 
 
-            // --- Match Matrix ---
-            let matchMatrixHtml = "<h3>Group Stage Match Matrix</h3>";
+            // --- Match Details --- // Changed from Match Matrix
+            let matchMatrixHtml = "<h3>Group Stage Match Details</h3>"; // Changed from Match Matrix
             for (const group of groups) {
                 const groupDocRef = doc(db, "matchResults", group);
                 const groupDocSnap = await getDoc(groupDocRef);
@@ -686,8 +719,7 @@
                     groupTeams.forEach(team => {
                         matchMatrixHtml += `<th>${team}</th>`;
                     });
-                    matchMatrixHtml += `</tr></thead><tbody>`;
-
+                    matchMatrixHtml += `</tr></thead><tbody>`; 
                     groupTeams.forEach(rowTeam => {
                         matchMatrixHtml += `<tr><th>${rowTeam}</th>`;
                         groupTeams.forEach(colTeam => {
@@ -726,7 +758,7 @@
         } catch (error) {
             console.error("Error fetching Group Stage data: ", error);
             document.getElementById('groupTables').innerHTML = "<p>Error loading group tables data.</p>";
-            document.getElementById('matchMatrix').innerHTML = "<p>Error loading match matrix data.</p>";
+            document.getElementById('matchMatrix').innerHTML = "<p>Error loading match details data.</p>"; // Changed from Match Matrix
         }
     }
 
