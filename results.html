@@ -409,7 +409,7 @@
             groupTeams.forEach(teamName => {
                 standings[teamName] = {
                     teamName: teamName,
-                    played: 0, wins: 0, losses: 0, // Removed draws
+                    played: 0, wins: 0, losses: 0,
                     points: 0, scoreFor: 0, scoreAgainst: 0, difference: 0
                 };
             });
@@ -490,15 +490,27 @@
             qualifiers.sort(compareTeamStandings);
 
             // Fetch actual knockout match results if they exist (for SF/Final)
-            const knockoutMatches = {
-                quarter_finals: await window.getDocs(window.collection(window.db, "knockoutMatches", "quarter_finals", "matches")),
-                semi_finals: await window.getDocs(window.collection(window.db, "knockoutMatches", "semi_finals", "matches")),
-                final: await window.getDocs(window.collection(window.db, "knockoutMatches", "final", "matches"))
+            const knockoutMatchesData = {
+                quarter_finals: [],
+                semi_finals: [],
+                final: []
             };
+
+            const qfSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "quarter_finals", "matches"));
+            qfSnapshot.forEach(doc => knockoutMatchesData.quarter_finals.push(doc.data()));
+
+            const sfSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "semi_finals", "matches"));
+            sfSnapshot.forEach(doc => knockoutMatchesData.semi_finals.push(doc.data()));
+            
+            const finalSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "final", "matches"));
+            finalSnapshot.forEach(doc => knockoutMatchesData.final.push(doc.data()));
+
 
             // --- Quarter Finals ---
             let qfHtml = "";
             const qfLabels = ["QF1", "QF2", "QF3", "QF4"];
+            let qfWinners = {}; // To store QF winners for SF matchups
+
             if (qualifiers.length >= 8) {
                 // Pairings: Rank 1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6
                 const qfPairings = [
@@ -509,21 +521,37 @@
                 ];
 
                 qfPairings.forEach((pairing, index) => {
-                    const label = qfLabels[index]; // Get the specific label
+                    const label = qfLabels[index];
                     let score = "- (No Data)";
                     let venue = "TBD";
                     let time = "TBD";
+                    let winner = "TBD";
                     
-                    // Try to find actual match result
-                    knockoutMatches.quarter_finals.forEach(doc => {
-                        const match = doc.data();
-                        if ((match.teamA === pairing.teamA.teamName && match.teamB === pairing.teamB.teamName) ||
-                            (match.teamA === pairing.teamB.teamName && match.teamB === pairing.teamA.teamName)) {
-                            score = `${match.scoreA !== undefined ? match.scoreA : ''} - ${match.scoreB !== undefined ? match.scoreB : ''}`;
-                            venue = match.venue || "TBD";
-                            time = match.time || "TBD";
+                    const matchData = knockoutMatchesData.quarter_finals.find(
+                        m => (m.teamA === pairing.teamA.teamName && m.teamB === pairing.teamB.teamName) ||
+                             (m.teamA === pairing.teamB.teamName && m.teamB === pairing.teamA.teamName)
+                    );
+
+                    if (matchData) {
+                        const teamA_name = matchData.teamA;
+                        const teamB_name = matchData.teamB;
+                        const scoreA = parseInt(matchData.scoreA);
+                        const scoreB = parseInt(matchData.scoreB);
+
+                        if (!isNaN(scoreA) && !isNaN(scoreB)) {
+                            score = `${scoreA} - ${scoreB}`;
+                            if (scoreA > scoreB) {
+                                winner = teamA_name;
+                            } else if (scoreB > scoreA) {
+                                winner = teamB_name;
+                            } else {
+                                winner = "Draw (Replay Needed)"; // Should not happen in Petanque, but for completeness
+                            }
                         }
-                    });
+                        venue = matchData.venue || "TBD";
+                        time = matchData.time || "TBD";
+                    }
+                    qfWinners[label] = winner; // Store the winner
 
                     qfHtml += `<div class="bracket-match">
                                     <p class="teams">${label}: ${pairing.teamA.teamName} vs ${pairing.teamB.teamName}</p>
@@ -532,58 +560,65 @@
                                 </div>`;
                 });
             } else {
-                // Generate default QF matches even if not enough qualifiers
                 qfLabels.forEach(label => {
                     qfHtml += `<div class="bracket-match no-data-message">
                                 <p class="teams">${label}: TBD vs TBD</p>
                                 <p class="score">Score: - (Not enough qualifiers)</p>
                                 <p class="venue-time">Venue: TBD, Time: TBD</p>
                             </div>`;
+                    qfWinners[label] = "TBD"; // Ensure TBD if no qualifiers
                 });
-                qfHtml += `<div class="bracket-match no-data-message" style="margin-top: 10px;"><p>Only ${qualifiers.length}/8 teams qualified so far.</p></div>`; // Consolidated message
+                qfHtml += `<div class="bracket-match no-data-message" style="margin-top: 10px;"><p>Only ${qualifiers.length}/8 teams qualified so far.</p></div>`;
             }
             document.getElementById('quarterFinals').innerHTML = qfHtml;
 
             // --- Semi Finals ---
             let sfHtml = "";
             const sfLabels = ["SF1", "SF2"];
-            // Default Semi Final pairings if no actual data exists
-            const defaultSfPairings = [
-                { teamA: "Winner QF1", teamB: "Winner QF2" },
-                { teamA: "Winner QF3", teamB: "Winner QF4" }
-            ];
+            let sfWinners = {}; // To store SF winners for Final matchup
 
-            // Ensure two match boxes are always rendered for Semi Finals
-            const semiFinalDocs = [];
-            knockoutMatches.semi_finals.forEach(doc => semiFinalDocs.push(doc.data()));
+            // Determine SF pairings based on QF winners
+            const sfPairings = [
+                { teamA: qfWinners["QF1"], teamB: qfWinners["QF2"] },
+                { teamA: qfWinners["QF3"], teamB: qfWinners["QF4"] }
+            ];
 
             for (let i = 0; i < 2; i++) {
                 const label = sfLabels[i];
-                let teamA = "TBD";
-                let teamB = "TBD";
+                let teamA = sfPairings[i].teamA;
+                let teamB = sfPairings[i].teamB;
                 let score = "- (No Data)";
                 let venue = "TBD";
                 let time = "TBD";
-                let isNoData = true; // Flag to apply no-data-message class
+                let isNoData = true;
+                let winner = "TBD";
 
-                if (semiFinalDocs[i]) { // Check if actual data exists for this SF match
-                    const match = semiFinalDocs[i];
-                    teamA = match.teamA || "TBD";
-                    teamB = match.teamB || "TBD";
-                    score = `${match.scoreA !== undefined ? match.scoreA : ''} - ${match.scoreB !== undefined ? match.scoreB : ''}`;
-                    venue = match.venue || "TBD";
-                    time = match.time || "TBD";
-                    isNoData = false; // Data exists, so don't apply no-data-message
-                } else {
-                    // If actual data for this SF match is missing, use default winners
-                    if (i === 0) { // SF1
-                        teamA = defaultSfPairings[0].teamA;
-                        teamB = defaultSfPairings[0].teamB;
-                    } else if (i === 1) { // SF2
-                        teamA = defaultSfPairings[1].teamA;
-                        teamB = defaultSfPairings[1].teamB;
+                const matchData = knockoutMatchesData.semi_finals.find(
+                    m => (m.teamA === teamA && m.teamB === teamB) ||
+                         (m.teamA === teamB && m.teamB === teamA)
+                );
+                
+                if (matchData) {
+                    const teamA_name = matchData.teamA;
+                    const teamB_name = matchData.teamB;
+                    const scoreA = parseInt(matchData.scoreA);
+                    const scoreB = parseInt(matchData.scoreB);
+
+                    if (!isNaN(scoreA) && !isNaN(scoreB)) {
+                        score = `${scoreA} - ${scoreB}`;
+                        if (scoreA > scoreB) {
+                            winner = teamA_name;
+                        } else if (scoreB > scoreA) {
+                            winner = teamB_name;
+                        } else {
+                            winner = "Draw (Replay Needed)";
+                        }
                     }
+                    venue = matchData.venue || "TBD";
+                    time = matchData.time || "TBD";
+                    isNoData = false;
                 }
+                sfWinners[label] = winner; // Store SF winner
 
                 sfHtml += `<div class="bracket-match ${isNoData ? 'no-data-message' : ''}">
                                 <p class="teams">${label}: ${teamA} vs ${teamB}</p>
@@ -595,40 +630,38 @@
 
             // --- Final ---
             let finalHtml = "";
-            const finalLabel = "Final"; // Label for the final match
-            // Default Final pairing if no actual data exists
-            const defaultFinalPairing = { teamA: "Winner SF1", teamB: "Winner SF2" };
+            const finalLabel = "Final";
+            // Determine Final pairing based on SF winners
+            const finalPairing = { teamA: sfWinners["SF1"], teamB: sfWinners["SF2"] };
 
-            // Ensure one match box is always rendered for Final
-            const finalDocs = [];
-            knockoutMatches.final.forEach(doc => finalDocs.push(doc.data()));
-
-            let teamA_final = "TBD";
-            let teamB_final = "TBD";
+            let teamA_final = finalPairing.teamA;
+            let teamB_final = finalPairing.teamB;
             let score_final = "- (No Data)";
             let venue_final = "TBD";
             let time_final = "TBD";
             let isFinalNoData = true;
 
-            if (finalDocs[0]) { // Check if actual data exists for the Final match
-                const match = finalDocs[0];
-                teamA_final = match.teamA || "TBD";
-                teamB_final = match.teamB || "TBD";
-                score_final = `${match.scoreA !== undefined ? match.scoreA : ''} - ${match.scoreB !== undefined ? match.scoreB : ''}`;
-                venue_final = match.venue || "TBD";
-                time_final = match.time || "TBD";
+            const finalMatchData = knockoutMatchesData.final[0]; // Assuming only one final match
+            
+            if (finalMatchData) {
+                const teamA_name = finalMatchData.teamA;
+                const teamB_name = finalMatchData.teamB;
+                const scoreA = parseInt(finalMatchData.scoreA);
+                const scoreB = parseInt(finalMatchData.scoreB);
+
+                if (!isNaN(scoreA) && !isNaN(scoreB)) {
+                    score_final = `${scoreA} - ${scoreB}`;
+                }
+                venue_final = finalMatchData.venue || "TBD";
+                time_final = finalMatchData.time || "TBD";
                 isFinalNoData = false;
-            } else {
-                // If actual data is missing, use default winners
-                teamA_final = defaultFinalPairing.teamA;
-                teamB_final = defaultFinalPairing.teamB;
             }
 
             finalHtml += `<div class="bracket-match ${isFinalNoData ? 'no-data-message' : ''}">
-                            <p class="teams">${finalLabel}: ${teamA_final} vs ${teamB_final}</p>
-                            <p class="score">Score: ${score_final}</p>
-                            <p class="venue-time">Venue: ${venue_final}, Time: ${time_final}</p>
-                        </div>`;
+                                <p class="teams">${finalLabel}: ${teamA_final} vs ${teamB_final}</p>
+                                <p class="score">Score: ${score_final}</p>
+                                <p class="venue-time">Venue: ${venue_final}, Time: ${time_final}</p>
+                            </div>`;
             
             document.getElementById('finalMatch').innerHTML = finalHtml;
 
@@ -688,7 +721,7 @@
                                                  </tr>`;
                          });
                     } else {
-                         groupTablesHtml += `<tr><td colspan="8">No teams registered for this group.</td></tr>`; // Changed colspan to 8
+                         groupTablesHtml += `<tr><td colspan="8">No teams registered for this group.</td></tr>`;
                     }
                     groupTablesHtml += `</tbody></table>`;
                 } else {
@@ -830,7 +863,7 @@
             pdfDoc.text("Group Stage Standings", pdfDoc.internal.pageSize.width / 2, yOffset, { align: 'center' }); 
             yOffset += 10;
 
-            for (const group of window.groups) { // Use window.groups
+            for (const group of window.groups) { 
                 const sortedStandings = standingsByGroup[group] || [];
                 
                 if (sortedStandings.length > 0) {
@@ -881,13 +914,13 @@
             pdfDoc.text("Group Stage Match Details", pdfDoc.internal.pageSize.width / 2, yOffset, { align: 'center' }); 
             yOffset += 10;
 
-            for (const group of window.groups) { // Use window.groups
+            for (const group of window.groups) { 
                 const currentGroupMatches = matchesByGroup[group] || {};
                 const groupTeams = teamsByGroup[group] || [];
                 groupTeams.sort();
 
                 // Check if there's enough space for the next group's matches
-                if (yOffset + 30 > pdfDoc.internal.pageSize.height - 20 && group !== window.groups[0]) { // Use window.groups[0]
+                if (yOffset + 30 > pdfDoc.internal.pageSize.height - 20 && group !== window.groups[0]) { 
                     pdfDoc.addPage(); 
                     yOffset = 20;
                 }
@@ -962,9 +995,24 @@
             yOffset += 10;
 
             const knockoutStages = {
-                "Quarter Final": await window.getDocs(window.collection(window.db, "knockoutMatches", "quarter_finals", "matches")),
-                "Semi Final": await window.getDocs(window.collection(window.db, "knockoutMatches", "semi_finals", "matches")),
-                "Final": await window.getDocs(window.collection(window.db, "knockoutMatches", "final", "matches"))
+                "Quarter Final": await (async () => {
+                    const qfData = [];
+                    const qfSnap = await window.getDocs(window.collection(window.db, "knockoutMatches", "quarter_finals", "matches"));
+                    qfSnap.forEach(doc => qfData.push(doc.data()));
+                    return qfData;
+                })(),
+                "Semi Final": await (async () => {
+                    const sfData = [];
+                    const sfSnap = await window.getDocs(window.collection(window.db, "knockoutMatches", "semi_finals", "matches"));
+                    sfSnap.forEach(doc => sfData.push(doc.data()));
+                    return sfData;
+                })(),
+                "Final": await (async () => {
+                    const finalData = [];
+                    const finalSnap = await window.getDocs(window.collection(window.db, "knockoutMatches", "final", "matches"));
+                    finalSnap.forEach(doc => finalData.push(doc.data()));
+                    return finalData;
+                })()
             };
 
             for (const stageLabel in knockoutStages) {
@@ -981,8 +1029,7 @@
                 const knockoutData = [];
                 let hasKnockoutMatches = false;
 
-                knockoutStages[stageLabel].forEach(docSnap => {
-                    const match = docSnap.data();
+                knockoutStages[stageLabel].forEach(match => {
                     const teamA = match.teamA || 'TBD';
                     const teamB = match.teamB || 'TBD';
                     const score = `${match.scoreA !== undefined ? match.scoreA : '-'} - ${match.scoreB !== undefined ? match.scoreB : '-'}`;
@@ -992,16 +1039,19 @@
                     hasKnockoutMatches = true;
                 });
                 
-                if (!hasKnockoutMatches && stageLabel === "Quarter Final") {
-                    knockoutData.push(["QF1: TBD vs TBD", "- (No Data)", "Venue: TBD, Time: TBD"]);
-                    knockoutData.push(["QF2: TBD vs TBD", "- (No Data)", "Venue: TBD, Time: TBD"]);
-                    knockoutData.push(["QF3: TBD vs TBD", "- (No Data)", "Venue: TBD, Time: TBD"]);
-                    knockoutData.push(["QF4: TBD vs TBD", "- (No Data)", "Venue: TBD, Time: TBD"]);
-                } else if (!hasKnockoutMatches && stageLabel === "Semi Final") {
-                     knockoutData.push(["SF1: Winner QF1 vs Winner QF2", "- (No Data)", "Venue: TBD, Time: TBD"]);
-                     knockoutData.push(["SF2: Winner QF3 vs Winner QF4", "- (No Data)", "Venue: TBD, Time: TBD"]);
-                } else if (!hasKnockoutMatches && stageLabel === "Final") {
-                     knockoutData.push(["Final: Winner SF1 vs Winner SF2", "- (No Data)", "Venue: TBD, Time: TBD"]);
+                // Fallback for PDF generation if no actual data exists
+                if (!hasKnockoutMatches) {
+                    if (stageLabel === "Quarter Final") {
+                        knockoutData.push(["QF1: TBD vs TBD", "- (No Data)", "Venue: TBD, Time: TBD"]);
+                        knockoutData.push(["QF2: TBD vs TBD", "- (No Data)", "Venue: TBD, Time: TBD"]);
+                        knockoutData.push(["QF3: TBD vs TBD", "- (No Data)", "Venue: TBD, Time: TBD"]);
+                        knockoutData.push(["QF4: TBD vs TBD", "- (No Data)", "Venue: TBD, Time: TBD"]);
+                    } else if (stageLabel === "Semi Final") {
+                         knockoutData.push(["SF1: Winner QF1 vs Winner QF2", "- (No Data)", "Venue: TBD, Time: TBD"]);
+                         knockoutData.push(["SF2: Winner QF3 vs Winner QF4", "- (No Data)", "Venue: TBD, Time: TBD"]);
+                    } else if (stageLabel === "Final") {
+                         knockoutData.push(["Final: Winner SF1 vs Winner SF2", "- (No Data)", "Venue: TBD, Time: TBD"]);
+                    }
                 }
 
                 console.log(`Adding ${stageLabel} to PDF. Headers: [Match, Score, Venue & Time], Data:`, knockoutData);
