@@ -389,13 +389,7 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    // Make db, collection, getDocs, doc, getDoc globally accessible
-    window.db = getFirestore(app);
-    window.collection = collection;
-    window.getDocs = getDocs;
-    window.doc = doc;
-    window.getDoc = getDoc;
-
+    const db = getFirestore(app);
 
     // Define groups array
     window.groups = ["A", "B", "C", "D", "E", "F"];
@@ -419,8 +413,7 @@
     function compareTeamStandings(a, b) {
         if (b.points !== a.points) return b.points - a.points;
         if (b.difference !== a.difference) return b.difference - a.difference;
-        if (b.scoreFor !== a.scoreFor) return b.scoreFor - a.scoreFor;
-        return a.teamName.localeCompare(b.teamName);
+        if (b.scoreFor !== a.scoreFor) return a.teamName.localeCompare(b.teamName);
     }
 
     // Fetches and processes all group stage data
@@ -431,9 +424,9 @@
             teamsByGroup: {}
         };
 
-        const teamsSnapshot = await window.getDocs(window.collection(window.db, "teams"));
-        teamsSnapshot.forEach(doc => {
-            const data = doc.data();
+        const teamsSnapshot = await getDocs(collection(db, "teams"));
+        teamsSnapshot.forEach(documentSnapshot => { // Renamed 'doc' to 'documentSnapshot'
+            const data = documentSnapshot.data();
             const group = data.group;
             const teamName = data.teamName;
             if (group && teamName) {
@@ -443,8 +436,8 @@
         });
 
         for (const group of window.groups) {
-            const groupDocRef = window.doc(window.db, "matchResults", group);
-            const groupDocSnap = await window.getDoc(groupDocRef);
+            const groupDocRef = doc(db, "matchResults", group);
+            const groupDocSnap = await getDoc(groupDocRef);
 
             const groupTeams = result.teamsByGroup[group] || [];
             groupTeams.sort();
@@ -453,7 +446,7 @@
             groupTeams.forEach(teamName => {
                 standings[teamName] = {
                     teamName: teamName,
-                    played: 0, wins: 0, losses: 0,
+                    played: 0, wins: 0, losses: 0, draws: 0,
                     points: 0, scoreFor: 0, scoreAgainst: 0, difference: 0
                 };
             });
@@ -489,8 +482,7 @@
                                 } else if (scoreB > scoreA) {
                                     standings[teamB].wins++; standings[teamA].losses++; standings[teamB].points += 3;
                                 } else {
-                                    // If draws are not allowed in Petanque, this 'draw' scenario should ideally not occur based on rules.
-                                    // For now, we remove the 'draws' counter but keep point assignment if such data exists.
+                                    standings[teamA].draws++; standings[teamB].draws++;
                                     standings[teamA].points += 1; standings[teamB].points += 1;
                                 }
                             }
@@ -534,27 +526,28 @@
             qualifiers.sort(compareTeamStandings);
 
             // Fetch actual knockout match results if they exist (for SF/Final)
-            const knockoutMatchesData = {
+            const knockoutMatches = {
                 quarter_finals: [],
                 semi_finals: [],
                 final: []
             };
 
-            const qfSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "quarter_finals", "matches"));
-            qfSnapshot.forEach(doc => knockoutMatchesData.quarter_finals.push(doc.data()));
+            const qfSnapshot = await getDocs(collection(db, "knockoutMatches", "quarter_finals", "matches"));
+            // Renamed 'doc' to 'documentSnapshot' to avoid potential conflicts
+            qfSnapshot.forEach(documentSnapshot => knockoutMatches.quarter_finals.push(documentSnapshot.data())); 
 
-            const sfSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "semi_finals", "matches"));
-            sfSnapshot.forEach(doc => knockoutMatchesData.semi_finals.push(doc.data()));
+            const sfSnapshot = await getDocs(collection(db, "knockoutMatches", "semi_finals", "matches"));
+            // Renamed 'doc' to 'documentSnapshot' to avoid potential conflicts
+            sfSnapshot.forEach(documentSnapshot => knockoutMatches.semi_finals.push(documentSnapshot.data()));
             
-            const finalSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "final", "matches"));
-            finalSnapshot.forEach(doc => knockoutMatchesData.final.push(doc.data()));
+            const finalSnapshot = await getDocs(collection(db, "knockoutMatches", "final", "matches"));
+            // Renamed 'doc' to 'documentSnapshot' to avoid potential conflicts
+            finalSnapshot.forEach(documentSnapshot => knockoutMatches.final.push(documentSnapshot.data()));
 
 
             // --- Quarter Finals ---
             let qfHtml = "";
             const qfLabels = ["QF1", "QF2", "QF3", "QF4"];
-            let qfWinners = {}; // To store QF winners for SF matchups
-
             if (qualifiers.length >= 8) {
                 // Pairings: Rank 1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6
                 const qfPairings = [
@@ -565,37 +558,27 @@
                 ];
 
                 qfPairings.forEach((pairing, index) => {
-                    const label = qfLabels[index];
+                    const label = qfLabels[index]; // Get the specific label
                     let score = "- (No Data)";
                     let venue = "TBD";
                     let time = "TBD";
-                    let winner = "TBD";
                     
-                    const matchData = knockoutMatchesData.quarter_finals.find(
+                    // Try to find actual match result
+                    const matchData = knockoutMatches.quarter_finals.find(
                         m => (m.teamA === pairing.teamA.teamName && m.teamB === pairing.teamB.teamName) ||
                              (m.teamA === pairing.teamB.teamName && m.teamB === pairing.teamA.teamName)
                     );
 
                     if (matchData) {
-                        const teamA_name = matchData.teamA;
-                        const teamB_name = matchData.teamB;
                         const scoreA = parseInt(matchData.scoreA);
                         const scoreB = parseInt(matchData.scoreB);
 
                         if (!isNaN(scoreA) && !isNaN(scoreB)) {
                             score = `${scoreA} - ${scoreB}`;
-                            if (scoreA > scoreB) {
-                                winner = teamA_name;
-                            } else if (scoreB > scoreA) {
-                                winner = teamB_name;
-                            } else {
-                                winner = "Draw (Replay Needed)"; // Should not happen in Petanque, but for completeness
-                            }
                         }
                         venue = matchData.venue || "TBD";
                         time = matchData.time || "TBD";
                     }
-                    qfWinners[label] = winner; // Store the winner
 
                     qfHtml += `<div class="bracket-match">
                                     <p class="teams">${label}: ${pairing.teamA.teamName} vs ${pairing.teamB.teamName}</p>
@@ -604,65 +587,58 @@
                                 </div>`;
                 });
             } else {
+                // Generate default QF matches even if not enough qualifiers
                 qfLabels.forEach(label => {
                     qfHtml += `<div class="bracket-match no-data-message">
                                 <p class="teams">${label}: TBD vs TBD</p>
                                 <p class="score">Score: - (Not enough qualifiers)</p>
                                 <p class="venue-time">Venue: TBD, Time: TBD</p>
                             </div>`;
-                    qfWinners[label] = "TBD"; // Ensure TBD if no qualifiers
                 });
-                qfHtml += `<div class="bracket-match no-data-message" style="margin-top: 10px;"><p>Only ${qualifiers.length}/8 teams qualified so far.</p></div>`;
+                qfHtml += `<div class="bracket-match no-data-message" style="margin-top: 10px;"><p>Only ${qualifiers.length}/8 teams qualified so far.</p></div>`; // Consolidated message
             }
             document.getElementById('quarterFinals').innerHTML = qfHtml;
 
             // --- Semi Finals ---
             let sfHtml = "";
             const sfLabels = ["SF1", "SF2"];
-            let sfWinners = {}; // To store SF winners for Final matchup
-
-            // Determine SF pairings based on QF winners
-            const sfPairings = [
-                { teamA: qfWinners["QF1"], teamB: qfWinners["QF2"] },
-                { teamA: qfWinners["QF3"], teamB: qfWinners["QF4"] }
+            // Default Semi Final pairings if no actual data exists
+            const defaultSfPairings = [
+                { teamA: "Winner QF1", teamB: "Winner QF2" },
+                { teamA: "Winner QF3", teamB: "Winner QF4" }
             ];
+
+            // Ensure two match boxes are always rendered for Semi Finals
+            const semiFinalDocs = [];
+            knockoutMatches.semi_finals.forEach(matchData => semiFinalDocs.push(matchData)); // 'matchData' is already a plain object
 
             for (let i = 0; i < 2; i++) {
                 const label = sfLabels[i];
-                let teamA = sfPairings[i].teamA;
-                let teamB = sfPairings[i].teamB;
+                let teamA = "TBD";
+                let teamB = "TBD";
                 let score = "- (No Data)";
                 let venue = "TBD";
                 let time = "TBD";
-                let isNoData = true;
-                let winner = "TBD";
+                let isNoData = true; // Flag to apply no-data-message class
 
-                const matchData = knockoutMatchesData.semi_finals.find(
-                    m => (m.teamA === teamA && m.teamB === teamB) ||
-                         (m.teamA === teamB && m.teamB === teamA)
-                );
-                
-                if (matchData) {
-                    const teamA_name = matchData.teamA;
-                    const teamB_name = matchData.teamB;
-                    const scoreA = parseInt(matchData.scoreA);
-                    const scoreB = parseInt(matchData.scoreB);
-
-                    if (!isNaN(scoreA) && !isNaN(scoreB)) {
-                        score = `${scoreA} - ${scoreB}`;
-                        if (scoreA > scoreB) {
-                            winner = teamA_name;
-                        } else if (scoreB > scoreA) {
-                            winner = teamB_name;
-                        } else {
-                            winner = "Draw (Replay Needed)";
-                        }
+                if (semiFinalDocs[i]) { // Check if actual data exists for this SF match
+                    const match = semiFinalDocs[i];
+                    teamA = match.teamA || "TBD";
+                    teamB = match.teamB || "TBD";
+                    score = `${match.scoreA !== undefined ? match.scoreA : ''} - ${match.scoreB !== undefined ? match.scoreB : ''}`;
+                    venue = match.venue || "TBD";
+                    time = match.time || "TBD";
+                    isNoData = false; // Data exists, so don't apply no-data-message
+                } else {
+                    // If actual data for this SF match is missing, use default winners
+                    if (i === 0) { // SF1
+                        teamA = defaultSfPairings[0].teamA;
+                        teamB = defaultSfPairings[0].teamB;
+                    } else if (i === 1) { // SF2
+                        teamA = defaultSfPairings[1].teamA;
+                        teamB = defaultSfPairings[1].teamB;
                     }
-                    venue = matchData.venue || "TBD";
-                    time = matchData.time || "TBD";
-                    isNoData = false;
                 }
-                sfWinners[label] = winner; // Store SF winner
 
                 sfHtml += `<div class="bracket-match ${isNoData ? 'no-data-message' : ''}">
                                 <p class="teams">${label}: ${teamA} vs ${teamB}</p>
@@ -674,38 +650,40 @@
 
             // --- Final ---
             let finalHtml = "";
-            const finalLabel = "Final";
-            // Determine Final pairing based on SF winners
-            const finalPairing = { teamA: sfWinners["SF1"], teamB: sfWinners["SF2"] };
+            const finalLabel = "Final"; // Label for the final match
+            // Default Final pairing if no actual data exists
+            const defaultFinalPairing = { teamA: "Winner SF1", teamB: "Winner SF2" };
 
-            let teamA_final = finalPairing.teamA;
-            let teamB_final = finalPairing.teamB;
+            // Ensure one match box is always rendered for Final
+            const finalDocs = [];
+            knockoutMatches.final.forEach(matchData => finalDocs.push(matchData)); // 'matchData' is already a plain object
+
+            let teamA_final = "TBD";
+            let teamB_final = "TBD";
             let score_final = "- (No Data)";
             let venue_final = "TBD";
             let time_final = "TBD";
             let isFinalNoData = true;
 
-            const finalMatchData = knockoutMatchesData.final[0]; // Assuming only one final match
-            
-            if (finalMatchData) {
-                const teamA_name = finalMatchData.teamA;
-                const teamB_name = finalMatchData.teamB;
-                const scoreA = parseInt(finalMatchData.scoreA);
-                const scoreB = parseInt(finalMatchData.scoreB);
-
-                if (!isNaN(scoreA) && !isNaN(scoreB)) {
-                    score_final = `${scoreA} - ${scoreB}`;
-                }
-                venue_final = finalMatchData.venue || "TBD";
-                time_final = finalMatchData.time || "TBD";
+            if (finalDocs[0]) { // Check if actual data exists for the Final match
+                const match = finalDocs[0];
+                teamA_final = match.teamA || "TBD";
+                teamB_final = match.teamB || "TBD";
+                score_final = `${match.scoreA !== undefined ? match.scoreA : ''} - ${match.scoreB !== undefined ? match.scoreB : ''}`;
+                venue_final = match.venue || "TBD";
+                time_final = match.time || "TBD";
                 isFinalNoData = false;
+            } else {
+                // If actual data is missing, use default winners
+                teamA_final = defaultFinalPairing.teamA;
+                teamB_final = defaultFinalPairing.teamB;
             }
 
             finalHtml += `<div class="bracket-match ${isFinalNoData ? 'no-data-message' : ''}">
-                                <p class="teams">${finalLabel}: ${teamA_final} vs ${teamB_final}</p>
-                                <p class="score">Score: ${score_final}</p>
-                                <p class="venue-time">Venue: ${venue_final}, Time: ${time_final}</p>
-                            </div>`;
+                            <p class="teams">${finalLabel}: ${teamA_final} vs ${teamB_final}</p>
+                            <p class="score">Score: ${score_final}</p>
+                            <p class="venue-time">Venue: ${venue_final}, Time: ${time_final}</p>
+                        </div>`;
             
             document.getElementById('finalMatch').innerHTML = finalHtml;
 
@@ -718,7 +696,7 @@
     }
 
     // Fetches and displays data for the Group Stage (tables and match details).
-    window.fetchGroupStageData = async function() { // Made globally accessible
+    window.fetchGroupStageData = async function() {
         try {
             const { standingsByGroup, matchesByGroup, teamsByGroup } = await window.getGroupStageData();
 
@@ -736,7 +714,7 @@
                                                 <th>Played</th>
                                                 <th>Win</th>
                                                 <th>Loss</th>
-                                                <th>Draw</th>
+                                                <!-- 'Draw' column removed as requested -->
                                                 <th>Points</th>
                                                 <th>Score+</th>
                                                 <th>Score-</th>
@@ -745,14 +723,13 @@
                                         </thead>
                                         <tbody>`;
                     if (sortedStandings.length > 0) {
-                        // Fixed: Changed sortedTablesHtml to groupTablesHtml
                         sortedStandings.forEach(team => {
                             groupTablesHtml += `<tr>
                                                     <td>${team.teamName || 'N/A'}</td>
                                                     <td>${team.played}</td>
                                                     <td>${team.wins}</td>
                                                     <td>${team.losses}</td>
-                                                    <td>${team.draws}</td>
+                                                    <!-- 'Draw' value removed as requested -->
                                                     <td>${team.points}</td>
                                                     <td>${team.scoreFor}</td>
                                                     <td>${team.scoreAgainst}</td>
@@ -763,12 +740,13 @@
                          groupTeams.forEach(teamName => {
                              groupTablesHtml += `<tr>
                                                      <td>${teamName || 'N/A'}</td>
-                                                     <td>0</td> <td>0</td> <td>0</td> <td>0</td>
+                                                     <td>0</td> <td>0</td> <td>0</td>
                                                      <td>0</td> <td>0</td> <td>0</td> <td>0</td>
                                                  </tr>`;
                          });
                     } else {
-                         groupTablesHtml += `<tr><td colspan="9">No teams registered for this group.</td></tr>`;
+                         // Adjusted colspan from 9 to 8 because 'Draw' column is removed
+                         groupTablesHtml += `<tr><td colspan="8">No teams registered for this group.</td></tr>`;
                     }
                     groupTablesHtml += `</tbody></table>`;
                 } else {
@@ -778,11 +756,11 @@
             document.getElementById('groupTables').innerHTML = groupTablesHtml;
 
 
-            // --- Match Details --- // Changed from Match Matrix
-            let matchMatrixHtml = "<h3>Group Stage Match Details</h3>"; // Changed from Match Matrix
+            // --- Match Details ---
+            let matchMatrixHtml = "<h3>Group Stage Match Details</h3>";
             for (const group of window.groups) {
-                const groupDocRef = window.doc(window.db, "matchResults", group);
-                const groupDocSnap = await window.getDoc(groupDocRef);
+                const groupDocRef = doc(db, "matchResults", group);
+                const groupDocSnap = await getDoc(groupDocRef);
                 
                 const groupTeams = teamsByGroup[group] || [];
                 groupTeams.sort();
@@ -840,142 +818,147 @@
         } catch (error) {
             console.error("Error fetching Group Stage data: ", error);
             document.getElementById('groupTables').innerHTML = "<p>Error loading group tables data.</p>";
-            document.getElementById('matchMatrix').innerHTML = "<p>Error loading match details data.</p>"; // Changed from Match Matrix
+            document.getElementById('matchMatrix').innerHTML = "<p>Error loading match details data.</p>";
         }
     }
 
-    // New function to fetch and display all fixtures
+    // New function to fetch and display all fixtures (without scores)
     window.fetchFixturesData = async function() {
         try {
-            const { matchesByGroup, teamsByGroup } = await window.getGroupStageData();
-            
-            let fixturesHtml = `<table class="fixtures-table">
-                                <thead>
-                                    <tr>
-                                        <th>Group</th>
-                                        <th>Match</th>
-                                        <th>Score</th>
-                                        <th>Venue</th>
-                                        <th>Time</th>
-                                    </tr>
-                                </thead>
-                                <tbody>`;
+            const { teamsByGroup } = await window.getGroupStageData(); // Get teams and group info
 
+            // Fetch matchResults for venue/time, and knockoutMatches for teams in knockout stage
+            const groupMatchResults = {};
             for (const group of window.groups) {
-                const groupDocRef = window.doc(window.db, "matchResults", group);
-                const groupDocSnap = await window.getDoc(groupDocRef);
-                const groupTeams = teamsByGroup[group] || [];
-                groupTeams.sort();
-
-                const venue = groupDocSnap.exists() ? (groupDocSnap.data().venue || 'TBD') : 'TBD';
-                const time = groupDocSnap.exists() ? (groupDocSnap.data().time || 'TBD') : 'TBD';
-
-                if (groupTeams.length > 1) {
-                    // Iterate through all possible match pairings within the group
-                    for (let i = 0; i < groupTeams.length; i++) {
-                        for (let j = i + 1; j < groupTeams.length; j++) {
-                            const teamA = groupTeams[i];
-                            const teamB = groupTeams[j];
-                            const key1 = `${teamA.replace(/\s/g, '_')}_vs_${teamB.replace(/\s/g, '_')}`;
-                            const key2 = `${teamB.replace(/\s/g, '_')}_vs_${teamA.replace(/\s/g, '_')}`;
-                            
-                            let score = "-"; // Default for not-yet-played or no data
-                            if (matchesByGroup[group] && (matchesByGroup[group][key1] || matchesByGroup[group][key2])) {
-                                if (matchesByGroup[group][key1]) {
-                                    score = matchesByGroup[group][key1];
-                                } else if (matchesByGroup[group][key2]) {
-                                    const parts = matchesByGroup[group][key2].split('-');
-                                    if (parts.length === 2) {
-                                        score = `${parts[1]}-${parts[0]}`; // Swap for display if key is reversed
-                                    } else {
-                                        score = matchesByGroup[group][key2];
-                                    }
-                                }
-                            }
-
-                            fixturesHtml += `<tr>
-                                                <td>${group}</td>
-                                                <td>${teamA} vs ${teamB}</td>
-                                                <td>${score}</td>
-                                                <td>${venue}</td>
-                                                <td>${time}</td>
-                                            </tr>`;
-                        }
-                    }
+                const groupDocRef = doc(db, "matchResults", group);
+                const groupDocSnap = await getDoc(groupDocRef);
+                if (groupDocSnap.exists()) {
+                    groupMatchResults[group] = groupDocSnap.data();
                 } else {
-                    fixturesHtml += `<tr><td colspan="5">No scheduled matches for Group ${group} (not enough teams).</td></tr>`;
+                    groupMatchResults[group] = {}; // Ensure it's an object even if no data
                 }
             }
-
-            // --- Add Knockout Stage Fixtures (simplified for now) ---
-            fixturesHtml += `<tr><td colspan="5" class="group-heading" style="text-align: center;">KNOCKOUT STAGE</td></tr>`;
 
             const knockoutMatchesData = {
                 quarter_finals: [],
                 semi_finals: [],
                 final: []
             };
+            const qfSnapshot = await getDocs(collection(db, "knockoutMatches", "quarter_finals", "matches"));
+            qfSnapshot.forEach(documentSnapshot => knockoutMatchesData.quarter_finals.push(documentSnapshot.data())); // Renamed 'doc' to 'documentSnapshot'
+            const sfSnapshot = await getDocs(collection(db, "knockoutMatches", "semi_finals", "matches"));
+            sfSnapshot.forEach(documentSnapshot => knockoutMatchesData.semi_finals.push(documentSnapshot.data())); // Renamed 'doc' to 'documentSnapshot'
+            const finalSnapshot = await getDocs(collection(db, "knockoutMatches", "final", "matches"));
+            finalSnapshot.forEach(documentSnapshot => knockoutMatchesData.final.push(documentSnapshot.data())); // Renamed 'doc' to 'documentSnapshot'
 
-            const qfSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "quarter_finals", "matches"));
-            qfSnapshot.forEach(doc => knockoutMatchesData.quarter_finals.push(doc.data()));
+            let fixturesHtml = `<table class="fixtures-table">
+                                <thead>
+                                    <tr>
+                                        <th>Group</th>
+                                        <th>Match</th>
+                                        <th>Venue</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
 
-            const sfSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "semi_finals", "matches"));
-            sfSnapshot.forEach(doc => knockoutMatchesData.semi_finals.push(doc.data()));
-            
-            const finalSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "final", "matches"));
-            finalSnapshot.forEach(doc => knockoutMatchesData.final.push(doc.data()));
+            // --- Group Stage Fixtures ---
+            for (const group of window.groups) {
+                const groupTeams = teamsByGroup[group] || [];
+                groupTeams.sort(); 
+                const groupVenue = groupMatchResults[group].venue || 'TBD';
+                const groupTime = groupMatchResults[group].time || 'TBD';
+
+                if (groupTeams.length > 1) {
+                    fixturesHtml += `<tr><td colspan="4" class="group-heading">Group ${group}</td></tr>`;
+                    // Generate all possible match pairings within the group
+                    for (let i = 0; i < groupTeams.length; i++) {
+                        for (let j = i + 1; j < groupTeams.length; j++) {
+                            const teamA = groupTeams[i];
+                            const teamB = groupTeams[j];
+                            
+                            fixturesHtml += `<tr>
+                                                <td>${group}</td>
+                                                <td>${teamA} vs ${teamB}</td>
+                                                <td>${groupVenue}</td>
+                                                <td>${groupTime}</td>
+                                            </tr>`;
+                        }
+                    }
+                } else {
+                    fixturesHtml += `<tr><td colspan="4" class="group-heading">Group ${group}</td></tr>`;
+                    fixturesHtml += `<tr><td colspan="4">No scheduled matches for Group ${group} (not enough teams).</td></tr>`;
+                }
+            }
+
+            // --- Knockout Stage Fixtures ---
+            fixturesHtml += `<tr><td colspan="4" class="group-heading" style="text-align: center;">KNOCKOUT STAGE</td></tr>`;
 
             // Quarter Finals
-            fixturesHtml += `<tr><td colspan="5" class="group-heading">Quarter Finals</td></tr>`;
-            if (knockoutMatchesData.quarter_finals.length > 0) {
-                knockoutMatchesData.quarter_finals.forEach(match => {
-                    const score = (match.scoreA !== undefined && match.scoreB !== undefined) ? `${match.scoreA} - ${match.scoreB}` : "-";
-                    fixturesHtml += `<tr>
-                                        <td>N/A</td>
-                                        <td>${match.teamA || 'TBD'} vs ${match.teamB || 'TBD'}</td>
-                                        <td>${score}</td>
-                                        <td>${match.venue || 'TBD'}</td>
-                                        <td>${match.time || 'TBD'}</td>
-                                    </tr>`;
-                });
-            } else {
-                fixturesHtml += `<tr><td colspan="5">No Quarter Final matches recorded yet.</td></tr>`;
-            }
+            fixturesHtml += `<tr><td colspan="4" class="group-heading">Quarter Finals</td></tr>`;
+            const qfLabels = ["QF1", "QF2", "QF3", "QF4"];
+            qfLabels.forEach((label, index) => {
+                let teamA = "TBD";
+                let teamB = "TBD";
+                let venue = "TBD";
+                let time = "TBD";
 
+                if (knockoutMatchesData.quarter_finals[index]) {
+                    teamA = knockoutMatchesData.quarter_finals[index].teamA || 'TBD';
+                    teamB = knockoutMatchesData.quarter_finals[index].teamB || 'TBD';
+                    venue = knockoutMatchesData.quarter_finals[index].venue || 'TBD';
+                    time = knockoutMatchesData.quarter_finals[index].time || 'TBD';
+                }
+                fixturesHtml += `<tr>
+                                    <td>N/A</td>
+                                    <td>${label}: ${teamA} vs ${teamB}</td>
+                                    <td>${venue}</td>
+                                    <td>${time}</td>
+                                </tr>`;
+            });
+           
             // Semi Finals
-            fixturesHtml += `<tr><td colspan="5" class="group-heading">Semi Finals</td></tr>`;
-            if (knockoutMatchesData.semi_finals.length > 0) {
-                knockoutMatchesData.semi_finals.forEach(match => {
-                    const score = (match.scoreA !== undefined && match.scoreB !== undefined) ? `${match.scoreA} - ${match.scoreB}` : "-";
-                    fixturesHtml += `<tr>
-                                        <td>N/A</td>
-                                        <td>${match.teamA || 'TBD'} vs ${match.teamB || 'TBD'}</td>
-                                        <td>${score}</td>
-                                        <td>${match.venue || 'TBD'}</td>
-                                        <td>${match.time || 'TBD'}</td>
-                                    </tr>`;
-                });
-            } else {
-                fixturesHtml += `<tr><td colspan="5">No Semi Final matches recorded yet.</td></tr>`;
-            }
+            fixturesHtml += `<tr><td colspan="4" class="group-heading">Semi Finals</td></tr>`;
+            const sfLabels = ["SF1", "SF2"];
+            sfLabels.forEach((label, index) => {
+                let teamA = "Winner QF" + (index * 2 + 1);
+                let teamB = "Winner QF" + (index * 2 + 2);
+                let venue = "TBD";
+                let time = "TBD";
+
+                if (knockoutMatchesData.semi_finals[index]) {
+                    teamA = knockoutMatchesData.semi_finals[index].teamA || teamA;
+                    teamB = knockoutMatchesData.semi_finals[index].teamB || teamB;
+                    venue = knockoutMatchesData.semi_finals[index].venue || 'TBD';
+                    time = knockoutMatchesData.semi_finals[index].time || 'TBD';
+                }
+                fixturesHtml += `<tr>
+                                    <td>N/A</td>
+                                    <td>${label}: ${teamA} vs ${teamB}</td>
+                                    <td>${venue}</td>
+                                    <td>${time}</td>
+                                </tr>`;
+            });
 
             // Final
-            fixturesHtml += `<tr><td colspan="5" class="group-heading">Final</td></tr>`;
-            if (knockoutMatchesData.final.length > 0) {
-                knockoutMatchesData.final.forEach(match => {
-                    const score = (match.scoreA !== undefined && match.scoreB !== undefined) ? `${match.scoreA} - ${match.scoreB}` : "-";
-                    fixturesHtml += `<tr>
-                                        <td>N/A</td>
-                                        <td>${match.teamA || 'TBD'} vs ${match.teamB || 'TBD'}</td>
-                                        <td>${score}</td>
-                                        <td>${match.venue || 'TBD'}</td>
-                                        <td>${match.time || 'TBD'}</td>
-                                    </tr>`;
-                });
-            } else {
-                fixturesHtml += `<tr><td colspan="5">No Final match recorded yet.</td></tr>`;
-            }
+            fixturesHtml += `<tr><td colspan="4" class="group-heading">Final</td></tr>`;
+            let finalTeamA = "Winner SF1";
+            let finalTeamB = "Winner SF2";
+            let finalVenue = "TBD";
+            let finalTime = "TBD";
 
+            if (knockoutMatchesData.final[0]) {
+                finalTeamA = knockoutMatchesData.final[0].teamA || finalTeamA;
+                finalTeamB = knockoutMatchesData.final[0].teamB || finalTeamB;
+                finalVenue = knockoutMatchesData.final[0].venue || 'TBD';
+                finalTime = knockoutMatchesData.final[0].time || 'TBD';
+            }
+            fixturesHtml += `<tr>
+                                <td>N/A</td>
+                                <td>Final: ${finalTeamA} vs ${finalTeamB}</td>
+                                <td>${finalVenue}</td>
+                                <td>${finalTime}</td>
+                            </tr>`;
 
             fixturesHtml += `</tbody></table>`;
             document.getElementById('fixturesContent').innerHTML = fixturesHtml;
@@ -990,9 +973,9 @@
     document.addEventListener('DOMContentLoaded', () => {
         window.switchTab('groupStage'); 
         console.log("Fetching Next Stage data...");
-        window.fetchNextStageData(); // Call via window
+        window.fetchNextStageData(); 
         console.log("Fetching Group Stage data...");
-        window.fetchGroupStageData(); // Call via window
+        window.fetchGroupStageData();
         console.log("Fetching Fixtures data...");
         window.fetchFixturesData(); // Call new fixtures function
     });
@@ -1005,7 +988,7 @@
   <script> // This script is NOT a module
     // Global function to download results as PDF
     window.downloadResultsPdf = async function() {
-        console.log("Attempting to download PDF...");
+        console.log("Attempting to download Results PDF...");
         
         let jsPDFConstructor;
         // Check for the jsPDF constructor in the global scope
@@ -1048,13 +1031,13 @@
             };
 
             const qfSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "quarter_finals", "matches"));
-            qfSnapshot.forEach(doc => knockoutMatches.quarter_finals.push(doc.data()));
+            qfSnapshot.forEach(documentSnapshot => knockoutMatches.quarter_finals.push(documentSnapshot.data())); // Renamed 'doc' to 'documentSnapshot'
 
             const sfSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "semi_finals", "matches"));
-            sfSnapshot.forEach(doc => knockoutMatches.semi_finals.push(doc.data()));
+            sfSnapshot.forEach(documentSnapshot => knockoutMatches.semi_finals.push(documentSnapshot.data())); // Renamed 'doc' to 'documentSnapshot'
             
             const finalSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "final", "matches"));
-            finalSnapshot.forEach(doc => knockoutMatches.final.push(doc.data()));
+            finalSnapshot.forEach(documentSnapshot => knockoutMatches.final.push(documentSnapshot.data())); // Renamed 'doc' to 'documentSnapshot'
             console.log("Data fetched for PDF.");
             
             // --- Group Stage Standings ---
@@ -1071,14 +1054,14 @@
                     pdfDoc.text(`Group ${group} Standings`, 14, yOffset); 
                     yOffset += 8;
 
-                    // Removed "Draw" from headers
+                    // Removed "Draw" from headers for results PDF as requested
                     const headers = ["Team", "Played", "Win", "Loss", "Points", "Score+", "Score-", "Diff"];
                     const data = sortedStandings.map(team => [
                         team.teamName || 'N/A',
                         team.played,
                         team.wins,
                         team.losses,
-                        // Removed team.draws
+                        // Removed team.draws from data mapping
                         team.points,
                         team.scoreFor,
                         team.scoreAgainst,
@@ -1289,105 +1272,114 @@
             pdfDoc.text("SMZ18201: Petanque Match Fixtures", pdfDoc.internal.pageSize.width / 2, yOffset, { align: 'center' });
             yOffset += 15;
 
-            const { matchesByGroup, teamsByGroup } = await window.getGroupStageData();
-
-            const fixturesData = [];
-            let currentGroup = '';
-
+            const { teamsByGroup } = await window.getGroupStageData();
+            
+            // Fetch matchResults for venue/time, and knockoutMatches for teams in knockout stage
+            const groupMatchResults = {};
             for (const group of window.groups) {
-                const groupDocRef = window.doc(window.db, "matchResults", group);
-                const groupDocSnap = await window.getDoc(groupDocRef);
-                const groupTeams = teamsByGroup[group] || [];
-                groupTeams.sort();
-
-                const venue = groupDocSnap.exists() ? (groupDocSnap.data().venue || 'TBD') : 'TBD';
-                const time = groupDocSnap.exists() ? (groupDocSnap.data().time || 'TBD') : 'TBD';
-
-                if (groupTeams.length > 1) {
-                    fixturesData.push([{ content: `Group ${group}`, colSpan: 5, styles: { fillColor: [209, 236, 241], textColor: [12, 84, 96], fontStyle: 'bold', halign: 'left' } }]);
-                    // Iterate through all possible match pairings within the group
-                    for (let i = 0; i < groupTeams.length; i++) {
-                        for (let j = i + 1; j < groupTeams.length; j++) {
-                            const teamA = groupTeams[i];
-                            const teamB = groupTeams[j];
-                            const key1 = `${teamA.replace(/\s/g, '_')}_vs_${teamB.replace(/\s/g, '_')}`;
-                            const key2 = `${teamB.replace(/\s/g, '_')}_vs_${teamA.replace(/\s/g, '_')}`;
-                            
-                            let score = "-"; 
-                            if (matchesByGroup[group] && (matchesByGroup[group][key1] || matchesByGroup[group][key2])) {
-                                if (matchesByGroup[group][key1]) {
-                                    score = matchesByGroup[group][key1];
-                                } else if (matchesByGroup[group][key2]) {
-                                    const parts = matchesByGroup[group][key2].split('-');
-                                    if (parts.length === 2) {
-                                        score = `${parts[1]}-${parts[0]}`; 
-                                    } else {
-                                        score = matchesByGroup[group][key2];
-                                    }
-                                }
-                            }
-                            fixturesData.push([group, `${teamA} vs ${teamB}`, score, venue, time]);
-                        }
-                    }
+                const groupDocRef = doc(db, "matchResults", group);
+                const groupDocSnap = await getDoc(groupDocRef);
+                if (groupDocSnap.exists()) {
+                    groupMatchResults[group] = groupDocSnap.data();
                 } else {
-                    fixturesData.push([{ content: `Group ${group}: No scheduled matches (not enough teams).`, colSpan: 5, styles: { fillColor: [248, 249, 250], textColor: [150, 150, 150], fontStyle: 'italic', halign: 'left' } }]);
+                    groupMatchResults[group] = {};
                 }
             }
-
-            // --- Add Knockout Stage Fixtures ---
-            fixturesData.push([{ content: "KNOCKOUT STAGE", colSpan: 5, styles: { fillColor: [209, 236, 241], textColor: [12, 84, 96], fontStyle: 'bold', halign: 'center' } }]);
 
             const knockoutMatchesData = {
                 quarter_finals: [],
                 semi_finals: [],
                 final: []
             };
+            const qfSnapshot = await getDocs(collection(db, "knockoutMatches", "quarter_finals", "matches"));
+            qfSnapshot.forEach(documentSnapshot => knockoutMatchesData.quarter_finals.push(documentSnapshot.data())); // Renamed 'doc' to 'documentSnapshot'
+            const sfSnapshot = await getDocs(collection(db, "knockoutMatches", "semi_finals", "matches"));
+            sfSnapshot.forEach(documentSnapshot => knockoutMatchesData.semi_finals.push(documentSnapshot.data())); // Renamed 'doc' to 'documentSnapshot'
+            const finalSnapshot = await getDocs(collection(db, "knockoutMatches", "final", "matches"));
+            finalSnapshot.forEach(documentSnapshot => knockoutMatchesData.final.push(documentSnapshot.data())); // Renamed 'doc' to 'documentSnapshot'
 
-            const qfSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "quarter_finals", "matches"));
-            qfSnapshot.forEach(doc => knockoutMatchesData.quarter_finals.push(doc.data()));
+            const fixturesData = [];
 
-            const sfSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "semi_finals", "matches"));
-            sfSnapshot.forEach(doc => knockoutMatchesData.semi_finals.push(doc.data()));
-            
-            const finalSnapshot = await window.getDocs(window.collection(window.db, "knockoutMatches", "final", "matches"));
-            finalSnapshot.forEach(doc => knockoutMatchesData.final.push(doc.data()));
+            // --- Group Stage Fixtures ---
+            for (const group of window.groups) {
+                const groupTeams = teamsByGroup[group] || [];
+                groupTeams.sort(); 
+                const groupVenue = groupMatchResults[group].venue || 'TBD';
+                const groupTime = groupMatchResults[group].time || 'TBD';
+
+                if (groupTeams.length > 1) {
+                    fixturesData.push([{ content: `Group ${group}`, colSpan: 4, styles: { fillColor: [209, 236, 241], textColor: [12, 84, 96], fontStyle: 'bold', halign: 'left' } }]);
+                    // Generate all possible match pairings within the group
+                    for (let i = 0; i < groupTeams.length; i++) {
+                        for (let j = i + 1; j < groupTeams.length; j++) {
+                            const teamA = groupTeams[i];
+                            const teamB = groupTeams[j];
+                            
+                            fixturesData.push([group, `${teamA} vs ${teamB}`, groupVenue, groupTime]);
+                        }
+                    }
+                } else {
+                    fixturesData.push([{ content: `Group ${group}: No scheduled matches (not enough teams).`, colSpan: 4, styles: { fillColor: [248, 249, 250], textColor: [150, 150, 150], fontStyle: 'italic', halign: 'left' } }]);
+                }
+            }
+
+            // --- Knockout Stage Fixtures ---
+            fixturesData.push([{ content: "KNOCKOUT STAGE", colSpan: 4, styles: { fillColor: [209, 236, 241], textColor: [12, 84, 96], fontStyle: 'bold', halign: 'center' } }]);
 
             // Quarter Finals
-            fixturesData.push([{ content: "Quarter Finals", colSpan: 5, styles: { fillColor: [209, 236, 241], textColor: [12, 84, 96], fontStyle: 'bold', halign: 'left' } }]);
-            if (knockoutMatchesData.quarter_finals.length > 0) {
-                knockoutMatchesData.quarter_finals.forEach(match => {
-                    const score = (match.scoreA !== undefined && match.scoreB !== undefined) ? `${match.scoreA} - ${match.scoreB}` : "-";
-                    fixturesData.push(['N/A', `${match.teamA || 'TBD'} vs ${match.teamB || 'TBD'}`, score, match.venue || 'TBD', match.time || 'TBD']);
-                });
-            } else {
-                fixturesData.push([{ content: "No Quarter Final matches recorded yet.", colSpan: 5, styles: { fillColor: [248, 249, 250], textColor: [150, 150, 150], fontStyle: 'italic', halign: 'left' } }]);
-            }
+            fixturesData.push([{ content: "Quarter Finals", colSpan: 4, styles: { fillColor: [209, 236, 241], textColor: [12, 84, 96], fontStyle: 'bold', halign: 'left' } }]);
+            const qfLabels = ["QF1", "QF2", "QF3", "QF4"];
+            qfLabels.forEach((label, index) => {
+                let teamA = "TBD";
+                let teamB = "TBD";
+                let venue = "TBD";
+                let time = "TBD";
 
+                if (knockoutMatchesData.quarter_finals[index]) {
+                    teamA = knockoutMatchesData.quarter_finals[index].teamA || 'TBD';
+                    teamB = knockoutMatchesData.quarter_finals[index].teamB || 'TBD';
+                    venue = knockoutMatchesData.quarter_finals[index].venue || 'TBD';
+                    time = knockoutMatchesData.quarter_finals[index].time || 'TBD';
+                }
+                fixturesData.push(['N/A', `${label}: ${teamA} vs ${teamB}`, venue, time]);
+            });
+           
             // Semi Finals
-            fixturesData.push([{ content: "Semi Finals", colSpan: 5, styles: { fillColor: [209, 236, 241], textColor: [12, 84, 96], fontStyle: 'bold', halign: 'left' } }]);
-            if (knockoutMatchesData.semi_finals.length > 0) {
-                knockoutMatchesData.semi_finals.forEach(match => {
-                    const score = (match.scoreA !== undefined && match.scoreB !== undefined) ? `${match.scoreA} - ${match.scoreB}` : "-";
-                    fixturesData.push(['N/A', `${match.teamA || 'TBD'} vs ${match.teamB || 'TBD'}`, score, match.venue || 'TBD', match.time || 'TBD']);
-                });
-            } else {
-                fixturesData.push([{ content: "No Semi Final matches recorded yet.", colSpan: 5, styles: { fillColor: [248, 249, 250], textColor: [150, 150, 150], fontStyle: 'italic', halign: 'left' } }]);
-            }
+            fixturesData.push([{ content: "Semi Finals", colSpan: 4, styles: { fillColor: [209, 236, 241], textColor: [12, 84, 96], fontStyle: 'bold', halign: 'left' } }]);
+            const sfLabels = ["SF1", "SF2"];
+            sfLabels.forEach((label, index) => {
+                let teamA = "Winner QF" + (index * 2 + 1);
+                let teamB = "Winner QF" + (index * 2 + 2);
+                let venue = "TBD";
+                let time = "TBD";
+
+                if (knockoutMatchesData.semi_finals[index]) {
+                    teamA = knockoutMatchesData.semi_finals[index].teamA || teamA;
+                    teamB = knockoutMatchesData.semi_finals[index].teamB || teamB;
+                    venue = knockoutMatchesData.semi_finals[index].venue || 'TBD';
+                    time = knockoutMatchesData.semi_finals[index].time || 'TBD';
+                }
+                fixturesData.push(['N/A', `${label}: ${teamA} vs ${teamB}`, venue, time]);
+            });
 
             // Final
-            fixturesData.push([{ content: "Final", colSpan: 5, styles: { fillColor: [209, 236, 241], textColor: [12, 84, 96], fontStyle: 'bold', halign: 'left' } }]);
-            if (knockoutMatchesData.final.length > 0) {
-                knockoutMatchesData.final.forEach(match => {
-                    const score = (match.scoreA !== undefined && match.scoreB !== undefined) ? `${match.scoreA} - ${match.scoreB}` : "-";
-                    fixturesData.push(['N/A', `${match.teamA || 'TBD'} vs ${match.teamB || 'TBD'}`, score, match.venue || 'TBD', match.time || 'TBD']);
-                });
-            } else {
-                fixturesData.push([{ content: "No Final match recorded yet.", colSpan: 5, styles: { fillColor: [248, 249, 250], textColor: [150, 150, 150], fontStyle: 'italic', halign: 'left' } }]);
+            fixturesData.push([{ content: "Final", colSpan: 4, styles: { fillColor: [209, 236, 241], textColor: [12, 84, 96], fontStyle: 'bold', halign: 'left' } }]);
+            let finalTeamA = "Winner SF1";
+            let finalTeamB = "Winner SF2";
+            let finalVenue = "TBD";
+            let finalTime = "TBD";
+
+            if (knockoutMatchesData.final[0]) {
+                finalTeamA = knockoutMatchesData.final[0].teamA || finalTeamA;
+                finalTeamB = knockoutMatchesData.final[0].teamB || finalTeamB;
+                finalVenue = knockoutMatchesData.final[0].venue || 'TBD';
+                finalTime = knockoutMatchesData.final[0].time || 'TBD';
             }
+            fixturesData.push(['N/A', `Final: ${finalTeamA} vs ${finalTeamB}`, finalVenue, finalTime]);
 
             pdfDoc.autoTable({
                 startY: yOffset + 5,
-                head: [["Group", "Match", "Score", "Venue", "Time"]],
+                head: [["Group", "Match", "Venue", "Time"]],
                 body: fixturesData,
                 headStyles: { fillColor: [0, 123, 255], textColor: 255, fontStyle: 'bold' },
                 styles: { fontSize: 8, cellPadding: 2, textColor: [52, 58, 64] },
