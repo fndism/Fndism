@@ -67,6 +67,11 @@
       background: #005fa3; /* Darker blue on hover */
       transform: scale(1.05); /* Slightly enlarge on hover */
     }
+    button:disabled {
+      background: #cccccc; /* Grey background for disabled button */
+      cursor: not-allowed;
+      transform: none; /* No transform for disabled */
+    }
     /* Styling for the result message area */
     .result {
       margin-top: 1.5rem;
@@ -194,6 +199,18 @@
 
     // Global variable to store all players fetched from Firebase 'players' collection
     let allPlayers = []; 
+
+    // Define the opening date and time for the draw (GMT+8)
+    const OPENING_DATE_TIME = new Date('2025-06-21T08:00:00+08:00'); // June 21, 2025, 8:00 AM GMT+8
+
+    /**
+     * Checks if the current time is past the opening date and time.
+     * @returns {boolean} True if the draw is open, false otherwise.
+     */
+    function isDrawOpen() {
+        const now = new Date();
+        return now >= OPENING_DATE_TIME;
+    }
 
     /**
      * Fetches all player names from the 'players' collection in Firebase
@@ -350,12 +367,19 @@
      * It validates inputs, checks for existing teams, assigns a group, and saves to Firebase.
      */
     async function drawGroup() {
-      const p1 = document.getElementById("player1Select").value.trim().toUpperCase();
-      const p2 = document.getElementById("player2Select").value.trim().toUpperCase();
       const resultDiv = document.getElementById("resultMsg");
-      
       resultDiv.textContent = "";
       resultDiv.style.color = "";
+
+      // Check if the draw is open based on the defined time
+      if (!isDrawOpen()) {
+          resultDiv.textContent = `❗ The draw system will open at ${OPENING_DATE_TIME.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: true, timeZoneName: 'short' })} on ${OPENING_DATE_TIME.toLocaleDateString('en-MY')}. Please wait.`;
+          resultDiv.style.color = "red";
+          return;
+      }
+
+      const p1 = document.getElementById("player1Select").value.trim().toUpperCase();
+      const p2 = document.getElementById("player2Select").value.trim().toUpperCase();
       
       console.log("Attempting to draw group for:", p1, "and", p2);
 
@@ -479,11 +503,27 @@
         // First, fetch all players from the 'players' database
         await fetchAllPlayersFromDB(); 
 
+        // Get elements
+        const drawButton = document.getElementById("drawButton");
+        const resultMsg = document.getElementById("resultMsg");
+        const teamInfoDiv = document.getElementById("teamInfo"); 
+
+        // Check if the draw is open and update UI accordingly
+        if (!isDrawOpen()) {
+            drawButton.disabled = true;
+            resultMsg.textContent = `❗ The draw system will open at ${OPENING_DATE_TIME.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: true, timeZoneName: 'short' })} on ${OPENING_DATE_TIME.toLocaleDateString('en-MY')}. Please wait.`;
+            resultMsg.style.color = "orange";
+        } else {
+            drawButton.disabled = false; // Enable if opened
+            resultMsg.textContent = ""; // Clear any previous "closed" message
+            resultMsg.style.color = "";
+        }
+
         // Then, populate dropdowns based on fetched players and registered teams
         refreshDropdownsLogic(); 
         
         // Hide the team info section initially
-        document.getElementById("teamInfo").style.display = 'none'; 
+        teamInfoDiv.style.display = 'none'; 
 
         // Add 'focus' event listeners to dropdowns to re-populate them with updated available players
         document.getElementById("player1Select").addEventListener("focus", refreshDropdownsLogic);
