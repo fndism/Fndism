@@ -119,6 +119,19 @@
         margin-top: 10px;
         text-align: right; /* For overall group save button */
     }
+    .group-info-inputs {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        justify-content: flex-start; /* Aligned to left */
+        flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    }
+    .group-info-inputs label {
+        font-weight: bold;
+        color: #555;
+    }
+
 
     /* --- Knockout Bracket Styling --- */
     .tournament-bracket {
@@ -300,6 +313,16 @@
         .bracket-match::before,
         .semi-finals-stage .bracket-match::before {
             display: none; /* Hide lines on mobile */
+        }
+        .group-info-inputs {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .group-info-inputs label {
+            margin-bottom: 5px;
+        }
+        .group-info-inputs .text-input {
+            width: calc(100% - 10px); /* Adjust width for full mobile width */
         }
     }
 
@@ -649,7 +672,8 @@
         const result = {
             standingsByGroup: {},
             matchesByGroup: {},
-            teamsByGroup: {}
+            teamsByGroup: {},
+            venuesByGroup: {} // Only venue data now
         };
 
         const teamsSnapshot = await getDocs(collection(db, "teams"));
@@ -679,9 +703,11 @@
                 };
             });
 
-            if (groupDocSnap.exists() && groupDocSnap.data().matches) {
-                const matches = groupDocSnap.data().matches;
+            if (groupDocSnap.exists()) { // Check if document exists
+                const data = groupDocSnap.data();
+                const matches = data.matches || {};
                 result.matchesByGroup[group] = matches;
+                result.venuesByGroup[group] = data.venue || ''; // Get venue
                 
                 for (const matchKey in matches) {
                     if (matches.hasOwnProperty(matchKey)) {
@@ -801,7 +827,7 @@
                 
                 // saveButtonDisabled based on whether the potential teams are actually known
                 let saveButtonDisabled = (pairing.teamA === null || pairing.teamB === null || 
-                                          pairing.teamA.teamName === "TBD" || pairing.teamB.teamName === "TBD");
+                                          (pairing.teamA && pairing.teamA.teamName === "TBD") || (pairing.teamB && pairing.teamB.teamName === "TBD"));
 
                 // Try to find existing match data for this specific QF label (e.g., QF1)
                 const matchData = knockoutMatchesData.quarter_finals.find(m => m.id === firebaseMatchId);
@@ -819,10 +845,14 @@
                     // If no data, keep display as TBD and inputs disabled unless actual teams are identified
                     if (pairing.teamA && pairing.teamA.teamName && pairing.teamA.teamName !== "TBD" &&
                         pairing.teamB && pairing.teamB.teamName && pairing.teamB.teamName !== "TBD") {
-                        // If potential teams are known but no data saved, show potential teams, but keep save disabled until scores are entered
+                        // If potential teams are known but no data saved, show potential teams,
+                        // and enable the save button because teams are now known.
                         displayTeamA = pairing.teamA.teamName;
                         displayTeamB = pairing.teamB.teamName;
-                        saveButtonDisabled = true; // Disable until scores are entered
+                        saveButtonDisabled = false; // ENABLE if actual teams are known
+                    } else {
+                        // If teams are still TBD/null from qualifiers, keep disabled
+                        saveButtonDisabled = true;
                     }
                 }
                 
@@ -852,7 +882,7 @@
                                 <div class="match-edit-controls">
                                     <button class="save-button" ${saveButtonDisabled ? 'disabled' : ''} 
                                             onclick="window.saveKnockoutMatch('quarter_finals', '${firebaseMatchId}', 
-                                            '${pairing.teamA?.teamName || "TBD"}', '${pairing.teamB?.teamName || "TBD"}')">Save</button>
+                                            '${displayTeamA}', '${displayTeamB}')">Save</button>
                                 </div>
                             </div>`;
             });
@@ -860,7 +890,7 @@
             // Display a message if not enough qualifiers for QF
             if (qualifiers.length < 8) {
                 qfHtml += `<div class="bracket-match no-data-message" style="margin-top: 10px;">
-                                <p>Only ${qualifiers.length}/8 teams qualified so far. Finish group stage to generate Quarter Final matches.</p>
+                                <p>Only ${qualifiers.length}/8 teams qualified so far. Complete group stage to generate Quarter Final matches.</p>
                             </div>`;
             }
             document.getElementById('quarterFinals').innerHTML = qfHtml;
@@ -905,12 +935,15 @@
                     saveButtonDisabled = false; // Enable saving if data exists
                 } else {
                     isNoData = true; // Mark as no data if no match found in Firebase for this label
-                    // If potential teams are known, show them even if no data saved yet
+                    // If potential teams are known, display them even if no data saved
                     if (sfPotentialPairings[i].teamA !== "TBD" && sfPotentialPairings[i].teamB !== "TBD" &&
                         sfPotentialPairings[i].teamA !== "DRAW" && sfPotentialPairings[i].teamB !== "DRAW") {
                         displayTeamA = sfPotentialPairings[i].teamA;
                         displayTeamB = sfPotentialPairings[i].teamB;
-                        saveButtonDisabled = false; // Enable save button if actual teams are known (even if scores not yet entered)
+                        saveButtonDisabled = false; // Enable the save button if actual teams are known
+                    } else {
+                        // If teams are still TBD/DRAW from QF winners, keep disabled
+                        saveButtonDisabled = true;
                     }
                 }
 
@@ -940,7 +973,7 @@
                                 <div class="match-edit-controls">
                                     <button class="save-button" ${saveButtonDisabled ? 'disabled' : ''} 
                                             onclick="window.saveKnockoutMatch('semi_finals', '${firebaseMatchId}', 
-                                            '${sfPotentialPairings[i].teamA}', '${sfPotentialPairings[i].teamB}')">Save</button>
+                                            '${displayTeamA}', '${displayTeamB}')">Save</button>
                                 </div>
                             </div>`;
             }
@@ -978,12 +1011,15 @@
                 finalSaveButtonDisabled = false; // Enable saving if data exists
             } else {
                 isFinalNoData = true; // Mark as no data if no match found in Firebase for this label
-                // If potential teams are known, show them even if no data saved yet
+                // If potential teams are known, display them even if no data saved
                 if (finalPotentialPairing.teamA !== "TBD" && finalPotentialPairing.teamB !== "TBD" &&
                     finalPotentialPairing.teamA !== "DRAW" && finalPotentialPairing.teamB !== "DRAW") {
                     displayTeamA_final = finalPotentialPairing.teamA;
                     displayTeamB_final = finalPotentialPairing.teamB;
-                    finalSaveButtonDisabled = false; // Enable save button if actual teams are known
+                    finalSaveButtonDisabled = false; // Enable the save button if actual teams are known
+                } else {
+                    // If teams are still TBD/DRAW from SF winners, keep disabled
+                    finalSaveButtonDisabled = true;
                 }
             }
 
@@ -1000,7 +1036,7 @@
                                 <div class="match-edit-controls">
                                     <button class="save-button" ${finalSaveButtonDisabled ? 'disabled' : ''} 
                                             onclick="window.saveKnockoutMatch('final', '${firebaseMatchId_final}', 
-                                            '${finalPotentialPairing.teamA}', '${finalPotentialPairing.teamB}')">Save</button>
+                                            '${displayTeamA_final}', '${displayTeamB_final}')">Save</button>
                                 </div>
                             </div>`;
             
@@ -1021,6 +1057,10 @@
             const groupDocSnap = await getDoc(groupDocRef);
             let currentMatches = groupDocSnap.exists() ? groupDocSnap.data().matches || {} : {};
             let updatedMatches = { ...currentMatches };
+
+            // Get venue input
+            const venueInput = document.getElementById(`${group}_venue`).value;
+            
 
             const teamsSnapshot = await getDocs(collection(db, "teams"));
             const teamsByGroup = {};
@@ -1062,8 +1102,9 @@
                     }
                 }
             }
-            await setDoc(groupDocRef, { matches: updatedMatches }, { merge: true });
-            showAlertModal(`Match results for Group ${group} saved successfully!`);
+            // Save matches and venue
+            await setDoc(groupDocRef, { matches: updatedMatches, venue: venueInput }, { merge: true });
+            showAlertModal(`Match results and group details for Group ${group} saved successfully!`);
             displayGroupStageMatches(); // Refresh data after saving
         } catch (error) {
             console.error(`Error saving match results for Group ${group}: `, error);
@@ -1081,13 +1122,19 @@
             const time = document.getElementById(`${firebaseMatchId}_time`).value;
 
             if (isNaN(parseInt(scoreA)) || isNaN(parseInt(scoreB)) || scoreA.trim() === "" || scoreB.trim() === "") {
-                showAlertModal("Please enter valid numeric scores for both teams.");
+                showAlertModal("Please enter valid numerical scores for both teams.");
+                return;
+            }
+            
+            // Add validation for actualTeamA and actualTeamB
+            if (actualTeamA === "TBD" || actualTeamB === "TBD" || actualTeamA === "DRAW" || actualTeamB === "DRAW") {
+                showAlertModal("Cannot save. Teams are still undetermined from previous stages.");
                 return;
             }
 
             const matchData = {
-                teamA: actualTeamA, // Save the actual qualified team names
-                teamB: actualTeamB, // Save the actual qualified team names
+                teamA: actualTeamA, // Save actual qualified team names
+                teamB: actualTeamB, // Save actual qualified team names
                 scoreA: parseInt(scoreA),
                 scoreB: parseInt(scoreB),
                 venue: venue,
@@ -1098,7 +1145,7 @@
             const matchDocRef = doc(db, "knockoutMatches", stage, "matches", firebaseMatchId);
             await setDoc(matchDocRef, matchData, { merge: true });
             showAlertModal(`Match results for ${stage.replace('_', ' ').toUpperCase()} saved successfully!`);
-            fetchNextStageData(); // Refresh data after saving
+            fetchNextStageData(); // Reload data after saving
         } catch (error) {
             console.error(`Error saving knockout match for ${stage}: `, error);
             showAlertModal(`Error saving knockout match for ${stage}. Please try again.`);
@@ -1107,21 +1154,27 @@
 
     // Main function to display group stage matches
     async function displayGroupStageMatches() {
-        const { matchesByGroup, teamsByGroup } = await getGroupStageData();
+        const { matchesByGroup, teamsByGroup, venuesByGroup } = await getGroupStageData(); // Removed timesByGroup
         const matchMatrixDiv = document.getElementById("matchMatrix");
         matchMatrixDiv.innerHTML = ""; // Clear previous content
 
         if (Object.keys(teamsByGroup).length === 0) {
-            matchMatrixDiv.innerHTML = "<p style='text-align: center; color: #666;'>No teams registered yet. Please register teams in the Group Draw page.</p>";
+            matchMatrixDiv.innerHTML = "<p style='text-align: center; color: #666;'>No teams registered yet. Please register teams on the Group Draw page.</p>";
             return;
         }
 
         for (const group of groups) {
             const groupTeams = teamsByGroup[group] || [];
             groupTeams.sort(); // Ensure consistent order
+            const currentVenue = venuesByGroup[group] || '';
+            // currentTime removed
 
             let groupHtml = `
                 <h3 style="color: #007bff;">Group ${group}</h3>
+                <div class="group-info-inputs">
+                    <label for="${group}_venue">Venue:</label>
+                    <input type="text" id="${group}_venue" class="text-input" value="${currentVenue}" placeholder="Enter Venue">
+                </div>
                 <table class="match-matrix-table">
                     <thead>
                         <tr>
@@ -1144,18 +1197,18 @@
                     if (teamA === teamB) {
                         groupHtml += `<td class="empty-cell"></td>`; // Empty cell for self-match
                     } else {
-                        // MatchKey always sorted alphabetically to ensure consistency in DB
+                        // MatchKey is always sorted alphabetically to ensure consistency in DB
                         const matchKey = teamA < teamB ? `${teamA.replace(/\s/g, '_')} vs ${teamB.replace(/\s/g, '_')}` : `${teamB.replace(/\s/g, '_')} vs ${teamA.replace(/\s/g, '_')}`;
                         
                         let scoreA = '';
                         let scoreB = '';
                         if (matchesByGroup[group] && matchesByGroup[group][matchKey]) {
                            const scores = matchesByGroup[group][matchKey].split('-');
-                           // Ensure scores are assigned to the correct team based on the display order
-                           if (teamA < teamB) { // If teamA appears first in sorted key (key is A vs B)
+                           // Ensure scores are assigned to the correct teams based on display order
+                           if (teamA < teamB) { // If teamA comes first in the sorted key (key is A vs B)
                                scoreA = scores[0];
                                scoreB = scores[1];
-                           } else { // If teamB appears first in sorted key (key is B vs A)
+                           } else { // If teamB comes first in the sorted key (key is B vs A)
                                scoreA = scores[1];
                                scoreB = scores[0];
                            }
@@ -1222,16 +1275,16 @@
                 console.log(`${stage.replace('_', ' ').toUpperCase()} matches deleted.`);
             }
 
-            resetStatusDiv.textContent = "✅ All match data has been reset successfully!";
+            resetStatusDiv.textContent = "✅ All match data successfully reset!";
             resetStatusDiv.style.color = "green";
 
-            // Refresh the displayed data on the page
+            // Reload displayed data on the page
             displayGroupStageMatches();
             fetchNextStageData();
 
         } catch (error) {
             console.error("Error resetting game data: ", error);
-            resetStatusDiv.textContent = "❗ An error occurred during reset. Please check console.";
+            resetStatusDiv.textContent = "❗ Error occurred during reset. Please check console.";
             resetStatusDiv.style.color = "red";
         }
     };
@@ -1239,7 +1292,7 @@
 
     // Initial data load when the page is loaded
     document.addEventListener("DOMContentLoaded", () => {
-        // Initially display Group Stage matches
+        // Display Group Stage matches initially
         displayGroupStageMatches();
         // Pre-load Next Stage data in the background, but only display when tab is active
         // fetchNextStageData(); // This is now called when the tab is switched, no need to call here.
