@@ -178,7 +178,6 @@
       display: flex; /* Use flexbox for score and inputs */
       justify-content: center;
       align-items: center;
-      /* flex-wrap: wrap; REMOVED */
     }
     .bracket-match .venue-time {
         font-size: 0.8em;
@@ -187,11 +186,9 @@
         display: flex; /* Use flexbox for venue/time and inputs */
         justify-content: center;
         align-items: center;
-        /* flex-wrap: wrap; REMOVED */
     }
 
-    /* Connecting Lines */
-    /* QF to SF */
+    /* Connecting Lines (simplified for responsiveness) */
     .bracket-match::after {
         content: '';
         position: absolute;
@@ -204,9 +201,6 @@
     }
 
     /* SF to Final (more complex, needs specific styling for SF matches) */
-    .bracket-stage.semi-finals-stage .bracket-match {
-        /* Line going right from SF match */
-    }
     .bracket-stage.quarter-finals-stage .bracket-match:nth-child(odd)::before {
         content: '';
         position: absolute;
@@ -276,7 +270,6 @@
         display: none;
     }
 
-
     @media (max-width: 768px) {
         .tournament-bracket {
             grid-template-columns: 1fr; /* Stack columns on smaller screens */
@@ -318,6 +311,158 @@
         font-size: 0.9em;
         color: #777;
     }
+    /* Reset Button Styling */
+    .reset-button-container {
+        text-align: center;
+        margin-top: 40px; /* More space from content above */
+        padding-bottom: 20px; /* Space above footer */
+    }
+    .reset-button {
+        background-color: #dc3545; /* Red color for reset */
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-size: 1.1em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .reset-button:hover {
+        background-color: #c82333; /* Darker red on hover */
+        transform: scale(1.05);
+    }
+    .reset-message {
+        margin-top: 15px;
+        font-weight: bold;
+        color: #dc3545; /* Red for warnings/status */
+    }
+
+    /* --- Custom Modal Styles --- */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000; /* Ensure it's on top */
+        visibility: hidden; /* Hidden by default */
+        opacity: 0;
+        transition: visibility 0s, opacity 0.3s linear;
+    }
+    .modal-overlay.visible {
+        visibility: visible;
+        opacity: 1;
+    }
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+        transform: translateY(-20px);
+        transition: transform 0.3s ease-out;
+    }
+    .modal-overlay.visible .modal-content {
+        transform: translateY(0);
+    }
+    .modal-content h3 {
+        margin-top: 0;
+        color: #333;
+        font-size: 1.3em;
+    }
+    .modal-content p {
+        margin-bottom: 20px;
+        color: #555;
+    }
+    .modal-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+    .modal-buttons button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.2s ease;
+        margin-top: 0; /* Override default button margin */
+    }
+    .modal-buttons .confirm-btn {
+        background-color: #dc3545; /* Red for confirm */
+        color: white;
+    }
+    .modal-buttons .confirm-btn:hover {
+        background-color: #c82333;
+    }
+    .modal-buttons .cancel-btn {
+        background-color: #6c757d; /* Grey for cancel */
+        color: white;
+    }
+    .modal-buttons .cancel-btn:hover {
+        background-color: #5a6268;
+    }
+
+    /* Styling for the custom alert modal */
+    .custom-alert-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1001; /* Higher z-index than confirm modal */
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s, opacity 0.3s linear;
+    }
+    .custom-alert-overlay.visible {
+        visibility: visible;
+        opacity: 1;
+    }
+    .custom-alert-content {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        max-width: 350px;
+        width: 80%;
+        transform: translateY(-20px);
+        transition: transform 0.3s ease-out;
+    }
+    .custom-alert-overlay.visible .custom-alert-content {
+        transform: translateY(0);
+    }
+    .custom-alert-content p {
+        margin-bottom: 20px;
+        font-size: 1.1em;
+        color: #333;
+    }
+    .custom-alert-content button {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.2s ease;
+        margin-top: 0;
+    }
+    .custom-alert-content button:hover {
+        background-color: #0056b3;
+    }
   </style>
 </head>
 <body>
@@ -331,7 +476,6 @@
 
   <!-- Group Stage Content - now active by default -->
   <div id="groupStage" class="tab-content active">
-    <!-- Team Standings Table removed from this page -->
     <h2>Match Details</h2>
     <div id="matchMatrix">Loading match details...</div>
   </div>
@@ -353,18 +497,45 @@
         <div class="bracket-stage final-stage">
             <h2>Final</h2>
             <div id="finalMatch">Loading Final match...</div>
+        
         </div>
     </div>
+  </div>
+
+  <!-- Reset Button Section -->
+  <div class="reset-button-container">
+    <button class="reset-button" onclick="window.resetGameData()">Reset All Match Data</button>
+    <div id="resetStatus" class="reset-message"></div>
   </div>
 
   <div class="footer">
     <p>&copy; 2025 Fndism. All rights reserved.</p>
   </div>
 
+  <!-- Custom Confirmation Modal -->
+  <div class="modal-overlay" id="confirmModalOverlay">
+      <div class="modal-content">
+          <h3 id="confirmModalTitle">Confirm Action</h3>
+          <p id="confirmModalMessage">Are you sure you want to proceed?</p>
+          <div class="modal-buttons">
+              <button class="confirm-btn" id="confirmModalConfirmBtn">Yes</button>
+              <button class="cancel-btn" id="confirmModalCancelBtn">No</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- Custom Alert Modal -->
+  <div class="custom-alert-overlay" id="customAlertOverlay">
+    <div class="custom-alert-content">
+      <p id="customAlertMessage"></p>
+      <button id="customAlertOkBtn">OK</button>
+    </div>
+  </div>
+
   <script type="module">
     // Firebase configuration and initialization
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js"; 
+    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
@@ -381,6 +552,68 @@
     // Define groups array
     const groups = ["A", "B", "C", "D", "E", "F"];
 
+    // --- Custom Modal Functions ---
+    /**
+     * Displays a custom confirmation modal and returns a Promise that resolves to true (confirmed) or false (cancelled).
+     * @param {string} title - The title of the confirmation modal.
+     * @param {string} message - The message displayed in the confirmation modal.
+     * @returns {Promise<boolean>} Resolves to true if confirmed, false if cancelled.
+     */
+    function showConfirmModal(title, message) {
+        return new Promise((resolve) => {
+            const overlay = document.getElementById('confirmModalOverlay');
+            const titleElement = document.getElementById('confirmModalTitle');
+            const messageElement = document.getElementById('confirmModalMessage');
+            const confirmBtn = document.getElementById('confirmModalConfirmBtn');
+            const cancelBtn = document.getElementById('confirmModalCancelBtn');
+
+            titleElement.textContent = title;
+            messageElement.textContent = message;
+
+            // Clear previous event listeners to prevent multiple firings
+            const cloneConfirmBtn = confirmBtn.cloneNode(true);
+            const cloneCancelBtn = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(cloneConfirmBtn, confirmBtn);
+            cancelBtn.parentNode.replaceChild(cloneCancelBtn, cancelBtn);
+
+            cloneConfirmBtn.addEventListener('click', () => {
+                overlay.classList.remove('visible');
+                resolve(true); // User confirmed
+            });
+
+            cloneCancelBtn.addEventListener('click', () => {
+                overlay.classList.remove('visible');
+                resolve(false); // User cancelled
+            });
+
+            overlay.classList.add('visible');
+        });
+    }
+
+    /**
+     * Displays a custom alert modal.
+     * @param {string} message - The message to display in the alert.
+     */
+    function showAlertModal(message) {
+        const overlay = document.getElementById('customAlertOverlay');
+        const messageElement = document.getElementById('customAlertMessage');
+        const okBtn = document.getElementById('customAlertOkBtn');
+
+        messageElement.textContent = message;
+
+        // Clear previous event listeners for OK button
+        const cloneOkBtn = okBtn.cloneNode(true);
+        okBtn.parentNode.replaceChild(cloneOkBtn, okBtn);
+
+        cloneOkBtn.addEventListener('click', () => {
+            overlay.classList.remove('visible');
+        });
+
+        overlay.classList.add('visible');
+    }
+    // --- End Custom Modal Functions ---
+
+
     // Make switchTab globally accessible
     window.switchTab = function(tabId) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -394,6 +627,13 @@
           targetTabElement.classList.add('active');
       }
       document.getElementById(tabId).classList.add('active');
+
+      // Refresh data when switching tabs
+      if (tabId === 'groupStage') {
+          displayGroupStageMatches();
+      } else if (tabId === 'nextStage') {
+          fetchNextStageData();
+      }
     }
 
     // Helper function to compare team standings for sorting.
@@ -499,19 +739,21 @@
 
             for (const group of groups) {
                 const groupStandings = standingsByGroup[group];
-                if (groupStandings && groupStandings.length >= 1) {
-                    groupWinners.push(groupStandings[0]);
-                    if (groupStandings.length >= 2) {
-                        allRunnersUp.push(groupStandings[1]);
-                    }
+                // Ensure there's a winner before pushing
+                if (groupStandings && groupStandings.length >= 1 && groupStandings[0].teamName !== "TBD") {
+                    groupWinners.push(groupStandings[0]); // Winner is rank 0
+                }
+                // Ensure there's a runner-up before pushing
+                if (groupStandings && groupStandings.length >= 2 && groupStandings[1].teamName !== "TBD") {
+                    allRunnersUp.push(groupStandings[1]); // Runner-up is rank 1
                 }
             }
 
             allRunnersUp.sort(compareTeamStandings);
-            const top2RunnersUp = allRunnersUp.slice(0, 2);
+            const top2RunnersUp = allRunnersUp.slice(0, 2); // Get the best 2 runners-up
 
             let qualifiers = [...groupWinners, ...top2RunnersUp];
-            qualifiers.sort(compareTeamStandings);
+            qualifiers.sort(compareTeamStandings); // Sort all 8 qualifiers (6 winners + 2 runners-up)
 
             // Fetch actual knockout match results if they exist (for SF/Final)
             const knockoutMatchesData = {
@@ -535,87 +777,91 @@
             const qfLabels = ["QF1", "QF2", "QF3", "QF4"];
             let qfWinners = {}; // To store QF winners for SF matchups
 
-            if (qualifiers.length >= 8) {
-                // Pairings: Rank 1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6
-                const qfPairings = [
-                    { teamA: qualifiers[0], teamB: qualifiers[7] },
-                    { teamA: qualifiers[3], teamB: qualifiers[4] },
-                    { teamA: qualifiers[1], teamB: qualifiers[6] },
-                    { teamA: qualifiers[2], teamB: qualifiers[5] }
-                ];
+            // Define QF pairings based on sorted qualifiers.
+            // These are the *potential* teams that *should* play.
+            const qfPotentialPairings = [
+                { teamA: qualifiers[0] || null, teamB: qualifiers[7] || null }, // Rank 1 vs Rank 8
+                { teamA: qualifiers[3] || null, teamB: qualifiers[4] || null }, // Rank 4 vs Rank 5
+                { teamA: qualifiers[1] || null, teamB: qualifiers[6] || null }, // Rank 2 vs Rank 7
+                { teamA: qualifiers[2] || null, teamB: qualifiers[5] || null }  // Rank 3 vs Rank 6
+            ];
+            
+            qfPotentialPairings.forEach((pairing, index) => {
+                const label = qfLabels[index];
+                // Use the label as the Firestore document ID for consistency
+                const firebaseMatchId = label; 
 
-                qfPairings.forEach((pairing, index) => {
-                    const label = qfLabels[index];
-                    let scoreA = '';
-                    let scoreB = '';
-                    let venue = "";
-                    let time = "";
-                    let winner = "TBD";
-                    let firebaseMatchId = `${label}_${pairing.teamA.teamName.replace(/\s/g, '_')}_vs_${pairing.teamB.teamName.replace(/\s/g, '_')}`; // Default ID
+                let displayTeamA = "TBD";
+                let displayTeamB = "TBD";
+                let scoreA = '';
+                let scoreB = '';
+                let venue = "";
+                let time = "";
+                let isNoData = false; // Controls the 'no-data-message' class
+                
+                // saveButtonDisabled based on whether the potential teams are actually known
+                let saveButtonDisabled = (pairing.teamA === null || pairing.teamB === null || 
+                                          pairing.teamA.teamName === "TBD" || pairing.teamB.teamName === "TBD");
 
-                    const matchData = knockoutMatchesData.quarter_finals.find(
-                        m => (m.teamA === pairing.teamA.teamName && m.teamB === pairing.teamB.teamName) ||
-                             (m.teamA === pairing.teamB.teamName && m.teamB === pairing.teamA.teamName)
-                    );
+                // Try to find existing match data for this specific QF label (e.g., QF1)
+                const matchData = knockoutMatchesData.quarter_finals.find(m => m.id === firebaseMatchId);
 
-                    if (matchData) {
-                        const teamA_name = matchData.teamA;
-                        const teamB_name = matchData.teamB;
-                        const sA = parseInt(matchData.scoreA);
-                        const sB = parseInt(matchData.scoreB);
-
-                        if (!isNaN(sA) && !isNaN(sB)) {
-                            scoreA = sA;
-                            scoreB = sB;
-                            if (sA > sB) {
-                                winner = teamA_name;
-                            } else if (sB > sA) {
-                                winner = teamB_name;
-                            } else {
-                                winner = "DRAW"; // Should not happen in Petanque, but for completeness
-                            }
-                        }
-                        venue = matchData.venue || "";
-                        time = matchData.time || "";
-                        firebaseMatchId = matchData.id; // Use actual Firestore document ID
+                if (matchData && matchData.teamA && matchData.teamB) { // If match data exists and has valid team names
+                    displayTeamA = matchData.teamA;
+                    displayTeamB = matchData.teamB;
+                    scoreA = matchData.scoreA || '';
+                    scoreB = matchData.scoreB || '';
+                    venue = matchData.venue || "";
+                    time = matchData.time || "";
+                    saveButtonDisabled = false; // Enable saving if data exists (even if scores are empty)
+                } else {
+                    isNoData = true; // Mark as no data if no match found in Firebase for this label
+                    // If no data, keep display as TBD and inputs disabled unless actual teams are identified
+                    if (pairing.teamA && pairing.teamA.teamName && pairing.teamA.teamName !== "TBD" &&
+                        pairing.teamB && pairing.teamB.teamName && pairing.teamB.teamName !== "TBD") {
+                        // If potential teams are known but no data saved, show potential teams, but keep save disabled until scores are entered
+                        displayTeamA = pairing.teamA.teamName;
+                        displayTeamB = pairing.teamB.teamName;
+                        saveButtonDisabled = true; // Disable until scores are entered
                     }
-                    qfWinners[label] = winner; // Store the winner
+                }
+                
+                // Determine winner for SF pairing based on saved data, or TBD if not available
+                let winner = "TBD";
+                if (matchData && !isNaN(parseInt(matchData.scoreA)) && !isNaN(parseInt(matchData.scoreB))) {
+                    if (matchData.scoreA > matchData.scoreB) {
+                        winner = matchData.teamA;
+                    } else if (matchData.scoreB > matchData.scoreA) {
+                        winner = matchData.teamB;
+                    } else {
+                        winner = "DRAW"; // Should not happen in Petanque
+                    }
+                }
+                qfWinners[label] = winner; // Store the winner for SF pairing
 
-                    qfHtml += `<div class="bracket-match">
-                                    <p class="teams">${label}: ${pairing.teamA.teamName} vs ${pairing.teamB.teamName}</p>
-                                    <p class="score">Score: 
-                                        <input type="number" id="${firebaseMatchId}_scoreA" class="score-input" value="${scoreA}" min="0"> - 
-                                        <input type="number" id="${firebaseMatchId}_scoreB" class="score-input" value="${scoreB}" min="0">
-                                    </p>
-                                    <p class="venue-time">Venue: 
-                                        <input type="text" id="${firebaseMatchId}_venue" class="text-input" value="${venue}"> Time: 
-                                        <input type="text" id="${firebaseMatchId}_time" class="text-input" value="${time}">
-                                    </p>
-                                    <div class="match-edit-controls">
-                                        <button class="save-button" onclick="window.saveKnockoutMatch('quarter_finals', '${firebaseMatchId}', '${pairing.teamA.teamName}', '${pairing.teamB.teamName}')">Save</button>
-                                    </div>
-                                </div>`;
-                });
-            } else {
-                qfLabels.forEach(label => {
-                    const firebaseMatchId = `${label}_TBD_vs_TBD_${Date.now()}`; // Unique ID for placeholder
-                    qfHtml += `<div class="bracket-match no-data-message">
-                                <p class="teams">${label}: TBD vs TBD</p>
+                qfHtml += `<div class="bracket-match ${isNoData ? 'no-data-message' : ''}">
+                                <p class="teams">${label}: ${displayTeamA} vs ${displayTeamB}</p>
                                 <p class="score">Score: 
-                                    <input type="number" id="${firebaseMatchId}_scoreA" class="score-input" value="" min="0"> - 
-                                    <input type="number" id="${firebaseMatchId}_scoreB" class="score-input" value="" min="0">
+                                    <input type="number" id="${firebaseMatchId}_scoreA" class="score-input" value="${scoreA}" min="0" ${saveButtonDisabled ? 'disabled' : ''}> - 
+                                    <input type="number" id="${firebaseMatchId}_scoreB" class="score-input" value="${scoreB}" min="0" ${saveButtonDisabled ? 'disabled' : ''}>
                                 </p>
                                 <p class="venue-time">Venue: 
-                                    <input type="text" id="${firebaseMatchId}_venue" class="text-input" value=""> Time: 
-                                    <input type="text" id="${firebaseMatchId}_time" class="text-input" value="">
+                                    <input type="text" id="${firebaseMatchId}_venue" class="text-input" value="${venue}" ${saveButtonDisabled ? 'disabled' : ''}> Time: 
+                                    <input type="text" id="${firebaseMatchId}_time" class="text-input" value="${time}" ${saveButtonDisabled ? 'disabled' : ''}>
                                 </p>
                                 <div class="match-edit-controls">
-                                    <button class="save-button" disabled>Save</button>
+                                    <button class="save-button" ${saveButtonDisabled ? 'disabled' : ''} 
+                                            onclick="window.saveKnockoutMatch('quarter_finals', '${firebaseMatchId}', 
+                                            '${pairing.teamA?.teamName || "TBD"}', '${pairing.teamB?.teamName || "TBD"}')">Save</button>
                                 </div>
                             </div>`;
-                    qfWinners[label] = "TBD"; // Ensure TBD if no qualifiers
-                });
-                qfHtml += `<div class="bracket-match no-data-message" style="margin-top: 10px;"><p>Only ${qualifiers.length}/8 teams qualified so far.</p></div>`;
+            });
+            
+            // Display a message if not enough qualifiers for QF
+            if (qualifiers.length < 8) {
+                qfHtml += `<div class="bracket-match no-data-message" style="margin-top: 10px;">
+                                <p>Only ${qualifiers.length}/8 teams qualified so far. Finish group stage to generate Quarter Final matches.</p>
+                            </div>`;
             }
             document.getElementById('quarterFinals').innerHTML = qfHtml;
 
@@ -624,67 +870,77 @@
             const sfLabels = ["SF1", "SF2"];
             let sfWinners = {}; // To store SF winners for Final matchup
 
-            // Determine SF pairings based on QF winners
-            const sfPairings = [
+            // Determine SF pairings based on QF winners (actual determined winners or "TBD")
+            const sfPotentialPairings = [
                 { teamA: qfWinners["QF1"], teamB: qfWinners["QF2"] },
                 { teamA: qfWinners["QF3"], teamB: qfWinners["QF4"] }
             ];
 
             for (let i = 0; i < 2; i++) {
                 const label = sfLabels[i];
-                let teamA = sfPairings[i].teamA;
-                let teamB = sfPairings[i].teamB;
+                // Use the label as the Firestore document ID
+                const firebaseMatchId = label;
+
+                let displayTeamA = "TBD";
+                let displayTeamB = "TBD";
                 let scoreA = '';
                 let scoreB = '';
                 let venue = "";
                 let time = "";
-                let isNoData = true; 
-                let winner = "TBD";
-                let firebaseMatchId = `${label}_${teamA.replace(/\s/g, '_')}_vs_${teamB.replace(/\s/g, '_')}`; // Default ID
-                let saveButtonDisabled = (teamA === "TBD" || teamB === "TBD" || teamA === "DRAW" || teamB === "DRAW");
-
-                const matchData = knockoutMatchesData.semi_finals.find(
-                    m => (m.teamA === teamA && m.teamB === teamB) ||
-                         (m.teamA === teamB && m.teamB === teamA)
-                );
+                let isNoData = false;    
                 
-                if (matchData) {
-                    const tA_name = matchData.teamA;
-                    const tB_name = matchData.teamB;
-                    const sA = parseInt(matchData.scoreA);
-                    const sB = parseInt(matchData.scoreB);
+                // saveButtonDisabled if potential teams are TBD or DRAW
+                let saveButtonDisabled = (sfPotentialPairings[i].teamA === "TBD" || sfPotentialPairings[i].teamB === "TBD" || 
+                                          sfPotentialPairings[i].teamA === "DRAW" || sfPotentialPairings[i].teamB === "DRAW");
 
-                    if (!isNaN(sA) && !isNaN(sB)) {
-                        scoreA = sA;
-                        scoreB = sB;
-                        if (sA > sB) {
-                            winner = tA_name;
-                        } else if (sB > sA) {
-                            winner = tB_name;
-                        } else {
-                            winner = "DRAW";
-                        }
-                    }
+                const matchData = knockoutMatchesData.semi_finals.find(m => m.id === firebaseMatchId);
+                
+                if (matchData && matchData.teamA && matchData.teamB) { // If match data exists and has valid team names
+                    displayTeamA = matchData.teamA;
+                    displayTeamB = matchData.teamB;
+                    scoreA = matchData.scoreA || '';
+                    scoreB = matchData.scoreB || '';
                     venue = matchData.venue || "";
                     time = matchData.time || "";
-                    isNoData = false;
-                    firebaseMatchId = matchData.id; // Use actual Firestore document ID
-                    saveButtonDisabled = false;
+                    saveButtonDisabled = false; // Enable saving if data exists
+                } else {
+                    isNoData = true; // Mark as no data if no match found in Firebase for this label
+                    // If potential teams are known, show them even if no data saved yet
+                    if (sfPotentialPairings[i].teamA !== "TBD" && sfPotentialPairings[i].teamB !== "TBD" &&
+                        sfPotentialPairings[i].teamA !== "DRAW" && sfPotentialPairings[i].teamB !== "DRAW") {
+                        displayTeamA = sfPotentialPairings[i].teamA;
+                        displayTeamB = sfPotentialPairings[i].teamB;
+                        saveButtonDisabled = false; // Enable save button if actual teams are known (even if scores not yet entered)
+                    }
+                }
+
+                // Determine winner for Final pairing
+                let winner = "TBD";
+                if (matchData && !isNaN(parseInt(matchData.scoreA)) && !isNaN(parseInt(matchData.scoreB))) {
+                    if (matchData.scoreA > matchData.scoreB) {
+                        winner = matchData.teamA;
+                    } else if (matchData.scoreB > matchData.scoreA) {
+                        winner = matchData.teamB;
+                    } else {
+                        winner = "DRAW";
+                    }
                 }
                 sfWinners[label] = winner; // Store SF winner
 
                 sfHtml += `<div class="bracket-match ${isNoData ? 'no-data-message' : ''}">
-                                <p class="teams">${label}: ${teamA} vs ${teamB}</p>
+                                <p class="teams">${label}: ${displayTeamA} vs ${displayTeamB}</p>
                                 <p class="score">Score: 
-                                    <input type="number" id="${firebaseMatchId}_scoreA" class="score-input" value="${scoreA}" min="0"> - 
-                                    <input type="number" id="${firebaseMatchId}_scoreB" class="score-input" value="${scoreB}" min="0">
+                                    <input type="number" id="${firebaseMatchId}_scoreA" class="score-input" value="${scoreA}" min="0" ${saveButtonDisabled ? 'disabled' : ''}> - 
+                                    <input type="number" id="${firebaseMatchId}_scoreB" class="score-input" value="${scoreB}" min="0" ${saveButtonDisabled ? 'disabled' : ''}>
                                 </p>
                                 <p class="venue-time">Venue: 
-                                    <input type="text" id="${firebaseMatchId}_venue" class="text-input" value="${venue}"> Time: 
-                                    <input type="text" id="${firebaseMatchId}_time" class="text-input" value="${time}">
+                                    <input type="text" id="${firebaseMatchId}_venue" class="text-input" value="${venue}" ${saveButtonDisabled ? 'disabled' : ''}> Time: 
+                                    <input type="text" id="${firebaseMatchId}_time" class="text-input" value="${time}" ${saveButtonDisabled ? 'disabled' : ''}>
                                 </p>
                                 <div class="match-edit-controls">
-                                    <button class="save-button" ${saveButtonDisabled ? 'disabled' : ''} onclick="window.saveKnockoutMatch('semi_finals', '${firebaseMatchId}', '${teamA}', '${teamB}')">Save</button>
+                                    <button class="save-button" ${saveButtonDisabled ? 'disabled' : ''} 
+                                            onclick="window.saveKnockoutMatch('semi_finals', '${firebaseMatchId}', 
+                                            '${sfPotentialPairings[i].teamA}', '${sfPotentialPairings[i].teamB}')">Save</button>
                                 </div>
                             </div>`;
             }
@@ -693,51 +949,58 @@
             // --- Final ---
             let finalHtml = "";
             const finalLabel = "Final";
-            // Determine Final pairing based on SF winners
-            const finalPairing = { teamA: sfWinners["SF1"], teamB: sfWinners["SF2"] };
+            // Determine Final pairing based on SF winners (actual determined winners or "TBD")
+            const finalPotentialPairing = { teamA: sfWinners["SF1"], teamB: sfWinners["SF2"] };
 
-            let teamA_final = finalPairing.teamA;
-            let teamB_final = finalPairing.teamB;
+            // Use the label as the Firestore document ID
+            const firebaseMatchId_final = finalLabel;
+
+            let displayTeamA_final = "TBD";
+            let displayTeamB_final = "TBD";
             let scoreA_final = '';
             let scoreB_final = '';
             let venue_final = "";
             let time_final = "";
-            let isFinalNoData = true;
-            let firebaseMatchId_final = `Final_${teamA_final.replace(/\s/g, '_')}_vs_${teamB_final.replace(/\s/g, '_')}`; // Default ID
-            let finalSaveButtonDisabled = (teamA_final === "TBD" || teamB_final === "TBD" || teamA_final === "DRAW" || teamB_final === "DRAW");
-
-
-            const finalMatchData = knockoutMatchesData.final[0]; // Assuming only one final match
+            let isFinalNoData = false;
             
-            if (finalMatchData) {
-                const tA_name = finalMatchData.teamA;
-                const tB_name = finalMatchData.teamB;
-                const sA = parseInt(finalMatchData.scoreA);
-                const sB = parseInt(finalMatchData.scoreB);
+            let finalSaveButtonDisabled = (finalPotentialPairing.teamA === "TBD" || finalPotentialPairing.teamB === "TBD" ||
+                                           finalPotentialPairing.teamA === "DRAW" || finalPotentialPairing.teamB === "DRAW");
 
-                if (!isNaN(sA) && !isNaN(sB)) {
-                    scoreA_final = sA;
-                    scoreB_final = sB;
-                }
+            const finalMatchData = knockoutMatchesData.final.find(m => m.id === firebaseMatchId_final); // Find by fixed ID
+            
+            if (finalMatchData && finalMatchData.teamA && finalMatchData.teamB) { // If match data exists and has valid team names
+                displayTeamA_final = finalMatchData.teamA;
+                displayTeamB_final = finalMatchData.teamB;
+                scoreA_final = finalMatchData.scoreA || '';
+                scoreB_final = finalMatchData.scoreB || '';
                 venue_final = finalMatchData.venue || "";
                 time_final = finalMatchData.time || "";
-                isFinalNoData = false;
-                firebaseMatchId_final = finalMatchData.id; // Use actual Firestore document ID
-                finalSaveButtonDisabled = false;
+                finalSaveButtonDisabled = false; // Enable saving if data exists
+            } else {
+                isFinalNoData = true; // Mark as no data if no match found in Firebase for this label
+                // If potential teams are known, show them even if no data saved yet
+                if (finalPotentialPairing.teamA !== "TBD" && finalPotentialPairing.teamB !== "TBD" &&
+                    finalPotentialPairing.teamA !== "DRAW" && finalPotentialPairing.teamB !== "DRAW") {
+                    displayTeamA_final = finalPotentialPairing.teamA;
+                    displayTeamB_final = finalPotentialPairing.teamB;
+                    finalSaveButtonDisabled = false; // Enable save button if actual teams are known
+                }
             }
 
             finalHtml += `<div class="bracket-match ${isFinalNoData ? 'no-data-message' : ''}">
-                                <p class="teams">${finalLabel}: ${teamA_final} vs ${teamB_final}</p>
+                                <p class="teams">${finalLabel}: ${displayTeamA_final} vs ${displayTeamB_final}</p>
                                 <p class="score">Score: 
-                                    <input type="number" id="${firebaseMatchId_final}_scoreA" class="score-input" value="${scoreA_final}" min="0"> - 
-                                    <input type="number" id="${firebaseMatchId_final}_scoreB" class="score-input" value="${scoreB_final}" min="0">
+                                    <input type="number" id="${firebaseMatchId_final}_scoreA" class="score-input" value="${scoreA_final}" min="0" ${finalSaveButtonDisabled ? 'disabled' : ''}> - 
+                                    <input type="number" id="${firebaseMatchId_final}_scoreB" class="score-input" value="${scoreB_final}" min="0" ${finalSaveButtonDisabled ? 'disabled' : ''}>
                                 </p>
                                 <p class="venue-time">Venue: 
-                                    <input type="text" id="${firebaseMatchId_final}_venue" class="text-input" value="${venue_final}"> Time: 
-                                    <input type="text" id="${firebaseMatchId_final}_time" class="text-input" value="${time_final}">
+                                    <input type="text" id="${firebaseMatchId_final}_venue" class="text-input" value="${venue_final}" ${finalSaveButtonDisabled ? 'disabled' : ''}> Time: 
+                                    <input type="text" id="${firebaseMatchId_final}_time" class="text-input" value="${time_final}" ${finalSaveButtonDisabled ? 'disabled' : ''}>
                                 </p>
                                 <div class="match-edit-controls">
-                                    <button class="save-button" ${finalSaveButtonDisabled ? 'disabled' : ''} onclick="window.saveKnockoutMatch('final', '${firebaseMatchId_final}', '${teamA_final}', '${teamB_final}')">Save</button>
+                                    <button class="save-button" ${finalSaveButtonDisabled ? 'disabled' : ''} 
+                                            onclick="window.saveKnockoutMatch('final', '${firebaseMatchId_final}', 
+                                            '${finalPotentialPairing.teamA}', '${finalPotentialPairing.teamB}')">Save</button>
                                 </div>
                             </div>`;
             
@@ -778,184 +1041,208 @@
                 for (let j = i + 1; j < groupTeams.length; j++) {
                     const teamA = groupTeams[i];
                     const teamB = groupTeams[j];
-                    const matchId_forward = `${teamA.replace(/\s/g, '_')}_vs_${teamB.replace(/\s/g, '_')}`;
-                    const matchId_backward = `${teamB.replace(/\s/g, '_')}_vs_${teamA.replace(/\s/g, '_')}`;
+                    // MatchKey always sorted alphabetically to ensure consistency in DB
+                    const matchKey = teamA < teamB ? `${teamA.replace(/\s/g, '_')} vs ${teamB.replace(/\s/g, '_')}` : `${teamB.replace(/\s/g, '_')} vs ${teamA.replace(/\s/g, '_')}`;
 
-                    const inputA = document.getElementById(`${matchId_forward}_scoreA`);
-                    const inputB = document.getElementById(`${matchId_forward}_scoreB`);
+                    const scoreA = document.getElementById(`${group}_${matchKey}_scoreA`).value;
+                    const scoreB = document.getElementById(`${group}_${matchKey}_scoreB`).value;
 
-                    if (inputA && inputB) {
-                        const scoreA = parseInt(inputA.value);
-                        const scoreB = parseInt(inputB.value);
-
-                        if (!isNaN(scoreA) && !isNaN(scoreB)) {
-                            // Update both forward and backward keys for consistency
-                            updatedMatches[matchId_forward] = `${scoreA}-${scoreB}`;
-                            updatedMatches[matchId_backward] = `${scoreB}-${scoreA}`;
-                        } else if (inputA.value !== '' || inputB.value !== '') {
-                            // If one score is filled but the other isn't, or inputs are not numbers
-                            console.warn(`Scores for ${teamA} vs ${teamB} in Group ${group} are incomplete or invalid. Skipping update for this match.`);
+                    // Only update if both scores are numbers and not empty
+                    if (!isNaN(parseInt(scoreA)) && !isNaN(parseInt(scoreB)) && scoreA.trim() !== "" && scoreB.trim() !== "") {
+                        // Store scores in alphabetical order of teams for consistency
+                        let finalScoreA = parseInt(scoreA);
+                        let finalScoreB = parseInt(scoreB);
+                        if (teamA > teamB) { // If teamA was actually B and teamB was A in the display
+                            [finalScoreA, finalScoreB] = [finalScoreB, finalScoreA];
                         }
+                        updatedMatches[matchKey] = `${finalScoreA}-${finalScoreB}`;
+                    } else if (updatedMatches.hasOwnProperty(matchKey)) {
+                        // If scores are cleared, remove them from updatedMatches
+                        delete updatedMatches[matchKey];
                     }
                 }
             }
-            await setDoc(groupDocRef, { matches: updatedMatches }, { merge: true }); 
-            alert(`All match scores in Group ${group} have been updated.`); 
-            fetchGroupStageData(); // Reload data to update display after save
+            await setDoc(groupDocRef, { matches: updatedMatches }, { merge: true });
+            showAlertModal(`Match results for Group ${group} saved successfully!`);
+            displayGroupStageMatches(); // Refresh data after saving
         } catch (error) {
-            console.error("Error saving all group matches:", error);
-            alert("Failed to update all group match scores. Please try again."); 
+            console.error(`Error saving match results for Group ${group}: `, error);
+            showAlertModal(`Error saving results for Group ${group}. Please try again.`);
         }
-    }
+    };
 
-    // Function to save Knockout Stage match results
-    window.saveKnockoutMatch = async function(stage, matchId, teamA, teamB) {
+    // Function to save knockout stage match results
+    // teamA and teamB arguments here are the *actual qualified* team names, not "TBD"
+    window.saveKnockoutMatch = async function(stage, firebaseMatchId, actualTeamA, actualTeamB) {
         try {
-            const scoreA = document.getElementById(`${matchId}_scoreA`).value;
-            const scoreB = document.getElementById(`${matchId}_scoreB`).value;
-            const venue = document.getElementById(`${matchId}_venue`).value; // Get venue value
-            const time = document.getElementById(`${matchId}_time`).value;   // Get time value
+            const scoreA = document.getElementById(`${firebaseMatchId}_scoreA`).value;
+            const scoreB = document.getElementById(`${firebaseMatchId}_scoreB`).value;
+            const venue = document.getElementById(`${firebaseMatchId}_venue`).value;
+            const time = document.getElementById(`${firebaseMatchId}_time`).value;
 
-            if (scoreA === '' || scoreB === '') {
-                alert('Please enter scores for both teams.'); 
+            if (isNaN(parseInt(scoreA)) || isNaN(parseInt(scoreB)) || scoreA.trim() === "" || scoreB.trim() === "") {
+                showAlertModal("Please enter valid numeric scores for both teams.");
                 return;
             }
-            
-            // Reference to the specific match document
-            const matchDocRef = doc(db, "knockoutMatches", stage, "matches", matchId);
 
-            // Update the document
-            await setDoc(matchDocRef, { 
-                teamA: teamA, 
-                teamB: teamB, 
+            const matchData = {
+                teamA: actualTeamA, // Save the actual qualified team names
+                teamB: actualTeamB, // Save the actual qualified team names
                 scoreA: parseInt(scoreA),
                 scoreB: parseInt(scoreB),
-                venue: venue, // Save venue
-                time: time    // Save time
-            }, { merge: true }); 
+                venue: venue,
+                time: time,
+                timestamp: new Date()
+            };
 
-            alert(`Score, venue, and time for ${teamA} vs ${teamB} in ${stage.replace('_', ' ')} have been updated.`); 
-            // Reload data to update display after save
-            fetchNextStageData();
+            const matchDocRef = doc(db, "knockoutMatches", stage, "matches", firebaseMatchId);
+            await setDoc(matchDocRef, matchData, { merge: true });
+            showAlertModal(`Match results for ${stage.replace('_', ' ').toUpperCase()} saved successfully!`);
+            fetchNextStageData(); // Refresh data after saving
         } catch (error) {
-            console.error(`Error saving ${stage} match ${matchId}:`, error);
-            alert(`Failed to update ${stage.replace('_', ' ')} match score. Please try again.`); 
+            console.error(`Error saving knockout match for ${stage}: `, error);
+            showAlertModal(`Error saving knockout match for ${stage}. Please try again.`);
+        }
+    };
+
+    // Main function to display group stage matches
+    async function displayGroupStageMatches() {
+        const { matchesByGroup, teamsByGroup } = await getGroupStageData();
+        const matchMatrixDiv = document.getElementById("matchMatrix");
+        matchMatrixDiv.innerHTML = ""; // Clear previous content
+
+        if (Object.keys(teamsByGroup).length === 0) {
+            matchMatrixDiv.innerHTML = "<p style='text-align: center; color: #666;'>No teams registered yet. Please register teams in the Group Draw page.</p>";
+            return;
+        }
+
+        for (const group of groups) {
+            const groupTeams = teamsByGroup[group] || [];
+            groupTeams.sort(); // Ensure consistent order
+
+            let groupHtml = `
+                <h3 style="color: #007bff;">Group ${group}</h3>
+                <table class="match-matrix-table">
+                    <thead>
+                        <tr>
+                            <th></th>`;
+            groupTeams.forEach(team => {
+                groupHtml += `<th>${team}</th>`;
+            });
+            groupHtml += `
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            for (let i = 0; i < groupTeams.length; i++) {
+                const teamA = groupTeams[i];
+                groupHtml += `
+                        <tr>
+                            <th>${teamA}</th>`;
+                for (let j = 0; j < groupTeams.length; j++) {
+                    const teamB = groupTeams[j];
+                    if (teamA === teamB) {
+                        groupHtml += `<td class="empty-cell"></td>`; // Empty cell for self-match
+                    } else {
+                        // MatchKey always sorted alphabetically to ensure consistency in DB
+                        const matchKey = teamA < teamB ? `${teamA.replace(/\s/g, '_')} vs ${teamB.replace(/\s/g, '_')}` : `${teamB.replace(/\s/g, '_')} vs ${teamA.replace(/\s/g, '_')}`;
+                        
+                        let scoreA = '';
+                        let scoreB = '';
+                        if (matchesByGroup[group] && matchesByGroup[group][matchKey]) {
+                           const scores = matchesByGroup[group][matchKey].split('-');
+                           // Ensure scores are assigned to the correct team based on the display order
+                           if (teamA < teamB) { // If teamA appears first in sorted key (key is A vs B)
+                               scoreA = scores[0];
+                               scoreB = scores[1];
+                           } else { // If teamB appears first in sorted key (key is B vs A)
+                               scoreA = scores[1];
+                               scoreB = scores[0];
+                           }
+                        }
+
+                        groupHtml += `
+                            <td>
+                                <input type="number" id="${group}_${matchKey}_scoreA" class="score-input" value="${scoreA}" min="0"> -
+                                <input type="number" id="${group}_${matchKey}_scoreB" class="score-input" value="${scoreB}" min="0">
+                            </td>`;
+                    }
+                }
+                groupHtml += `
+                        </tr>`;
+            }
+            groupHtml += `
+                    </tbody>
+                </table>
+                <div class="match-edit-controls">
+                    <button class="save-button" onclick="window.saveAllGroupMatches('${group}')">Save Group ${group} Results</button>
+                </div>
+            `;
+            matchMatrixDiv.innerHTML += groupHtml;
         }
     }
 
-    // New function to save venue and time for group stage (per group)
-    window.saveGroupVenueTime = async function(group) {
-        try {
-            const venue = document.getElementById(`group_${group}_venue`).value;
-            const time = document.getElementById(`group_${group}_time`).value;
+    // Function to reset all game data (match results and knockout stages)
+    window.resetGameData = async function() {
+        const resetStatusDiv = document.getElementById("resetStatus");
+        resetStatusDiv.textContent = ""; // Clear previous status
 
-            const groupDocRef = doc(db, "matchResults", group);
-            await setDoc(groupDocRef, { venue: venue, time: time }, { merge: true });
-            alert(`Venue and time for Group ${group} have been updated.`);
-            fetchGroupStageData(); // Reload data to update display
-        } catch (error) {
-            console.error(`Error saving Group ${group} venue/time:`, error);
-            alert("Failed to update group venue and time. Please try again.");
+        const confirmed = await showConfirmModal(
+            "Reset All Data?",
+            "Are you sure you want to reset ALL match data (Group Stage & Knockout)? This action cannot be undone."
+        );
+        
+        if (!confirmed) {
+            resetStatusDiv.textContent = "Reset cancelled.";
+            resetStatusDiv.style.color = "orange";
+            return;
         }
-    }
 
-    // Fetches and displays data for the Group Stage (tables and match details).
-    async function fetchGroupStageData() {
+        resetStatusDiv.textContent = "Resetting data... Please wait.";
+        resetStatusDiv.style.color = "blue";
+
         try {
-            // Call getGroupStageData() to get all necessary data
-            const { matchesByGroup, teamsByGroup } = await getGroupStageData(); 
-
-            let matchDetailsHtml = ""; 
+            // 1. Delete Group Stage match results
             for (const group of groups) {
                 const groupDocRef = doc(db, "matchResults", group);
-                const groupDocSnap = await getDoc(groupDocRef);
-                
-                const groupTeams = teamsByGroup[group] || [];
-                groupTeams.sort();
-
-                matchDetailsHtml += `<h4>Group ${group}</h4>`;
-
-                if (groupTeams.length > 0) {
-                    const venue = groupDocSnap.exists() ? (groupDocSnap.data().venue || '') : '';
-                    const time = groupDocSnap.exists() ? (groupDocSnap.data().time || '') : '';
-                    
-                    // Input fields for venue and time for the group
-                    matchDetailsHtml += `<div class="venue-time">
-                                            Venue: <input type="text" id="group_${group}_venue" class="text-input" value="${venue}"> Time: 
-                                            <input type="text" id="group_${group}_time" class="text-input" value="${time}">
-                                            <button class="save-button" onclick="window.saveGroupVenueTime('${group}')">Save Venue/Time</button>
-                                        </div>`;
-
-                    matchDetailsHtml += `<table class="match-matrix-table">
-                                        <thead>
-                                            <tr>
-                                                <th></th>`;
-                    groupTeams.forEach(team => {
-                        matchDetailsHtml += `<th>${team}</th>`;
-                    });
-                    matchDetailsHtml += `</tr></thead><tbody>`; 
-                    groupTeams.forEach(rowTeam => {
-                        matchDetailsHtml += `<tr><th>${rowTeam}</th>`;
-                        groupTeams.forEach(colTeam => {
-                            if (rowTeam === colTeam) {
-                                matchDetailsHtml += `<td class="empty-cell"></td>`;
-                            } else {
-                                // Default scores to empty strings for input fields
-                                let scoreA = '';
-                                let scoreB = '';
-                                if (groupDocSnap.exists() && matchesByGroup[group]) {
-                                    const matches = matchesByGroup[group];
-                                    const key1 = `${rowTeam.replace(/\s/g, '_')}_vs_${colTeam.replace(/\s/g, '_')}`;
-                                    const key2 = `${colTeam.replace(/\s/g, '_')}_vs_${rowTeam.replace(/\s/g, '_')}`;
-
-                                    let rawScore;
-                                    if (matches[key1]) {
-                                        rawScore = matches[key1];
-                                        const parts = rawScore.split('-');
-                                        scoreA = parts[0] || '';
-                                        scoreB = parts[1] || '';
-                                    } else if (matches[key2]) {
-                                        rawScore = matches[key2];
-                                        const parts = rawScore.split('-');
-                                        // Swap scores if key is reversed to maintain display consistency
-                                        scoreA = parts[1] || ''; 
-                                        scoreB = parts[0] || '';
-                                    }
-                                }
-                                const matchId = `${rowTeam.replace(/\s/g, '_')}_vs_${colTeam.replace(/\s/g, '_')}`; // Use consistent ID format
-
-                                matchDetailsHtml += `<td class="score-cell">
-                                                        <input type="number" id="${matchId}_scoreA" class="score-input" value="${scoreA}" min="0"> - 
-                                                        <input type="number" id="${matchId}_scoreB" class="score-input" value="${scoreB}" min="0">
-                                                    </td>`;
-                            }
-                        });
-                        matchDetailsHtml += `</tr>`;
-                    });
-                    matchDetailsHtml += `</tbody></table>`;
-                    // Add save button below each group table
-                    matchDetailsHtml += `<div class="match-edit-controls">
-                                            <button class="save-button" onclick="window.saveAllGroupMatches('${group}')">Save All Group ${group} Matches</button>
-                                        </div>`;
-                } else {
-                    matchDetailsHtml += `<p>No teams registered for Group ${group}.</p>`;
-                }
+                await deleteDoc(groupDocRef).catch(e => console.warn(`Doc for group ${group} not found or error deleting:`, e));
             }
-            document.getElementById('matchMatrix').innerHTML = matchDetailsHtml; 
+            console.log("Group Stage match results deleted.");
+
+            // 2. Delete Knockout Stage match results
+            const knockoutStages = ["quarter_finals", "semi_finals", "final"];
+            for (const stage of knockoutStages) {
+                const matchesCollectionRef = collection(db, "knockoutMatches", stage, "matches");
+                const matchesSnapshot = await getDocs(matchesCollectionRef);
+                const deletePromises = [];
+                matchesSnapshot.forEach(docToDelete => {
+                    deletePromises.push(deleteDoc(doc(db, "knockoutMatches", stage, "matches", docToDelete.id)));
+                });
+                await Promise.all(deletePromises);
+                console.log(`${stage.replace('_', ' ').toUpperCase()} matches deleted.`);
+            }
+
+            resetStatusDiv.textContent = "✅ All match data has been reset successfully!";
+            resetStatusDiv.style.color = "green";
+
+            // Refresh the displayed data on the page
+            displayGroupStageMatches();
+            fetchNextStageData();
+
         } catch (error) {
-            console.error("Error fetching Group Stage data:", error);
-            document.getElementById('matchMatrix').innerHTML = "<p>Error loading match details data.</p>";
+            console.error("Error resetting game data: ", error);
+            resetStatusDiv.textContent = "❗ An error occurred during reset. Please check console.";
+            resetStatusDiv.style.color = "red";
         }
-    }
+    };
 
 
-    // Call fetch functions when the page loads
-    document.addEventListener('DOMContentLoaded', () => {
-        window.switchTab('groupStage'); 
-        console.log("Fetching Next Stage data for update...");
-        fetchNextStageData(); 
-        console.log("Fetching Group Stage data for update...");
-        fetchGroupStageData();
+    // Initial data load when the page is loaded
+    document.addEventListener("DOMContentLoaded", () => {
+        // Initially display Group Stage matches
+        displayGroupStageMatches();
+        // Pre-load Next Stage data in the background, but only display when tab is active
+        // fetchNextStageData(); // This is now called when the tab is switched, no need to call here.
     });
   </script>
 </body>
