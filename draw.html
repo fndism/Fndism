@@ -5,84 +5,122 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>UniMAP Petanque Group Draw</title>
   <style>
+    /* Global styles for the body */
     body {
       font-family: "Segoe UI", sans-serif;
-      background: #f0f4f8;
+      background: #f0f4f8; /* Light blue-gray background */
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 2rem;
       margin: 0;
+      min-height: 100vh; /* Ensure body takes full viewport height */
     }
+    /* Styling for the main heading */
     h1 {
-      color: #0066cc;
+      color: #0066cc; /* Deep blue color */
     }
+    /* Card container for the form and results */
     .card {
       background: white;
       padding: 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      border-radius: 1rem; /* Rounded corners */
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1); /* Soft shadow */
       text-align: center;
       width: 100%;
-      max-width: 420px;
+      max-width: 420px; /* Max width for better readability on large screens */
+      box-sizing: border-box; /* Include padding and border in the element's total width and height */
     }
-    input {
+    /* Styling for select dropdowns */
+    select {
       width: 100%;
       padding: 0.75rem;
       margin: 0.5rem 0;
-      border: 1px solid #ccc;
+      border: 1px solid #ccc; /* Light gray border */
       border-radius: 8px;
       text-transform: uppercase;
+      box-sizing: border-box; /* Include padding and border in the element's total width and height */
+      -webkit-appearance: none; /* Remove default browser styling for select */
+      -moz-appearance: none;
+      appearance: none;
+      background-color: white; /* Ensure background is white */
+      background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292%22%20height%3D%22292%22%3E%3Cpath%20fill%3D%22%23333333%22%20d%3D%22M287%2C197.3L146.7%2C57c-2-2-4.9-3-7.7-3s-5.7%2C1-7.7%2C3L5%2C197.3c-4%2C4-4%2C10.5%2C0%2C14.5s10.5%2C4%2C14.5%2C0l127.2-127.3L272.5%2C211.8c4%2C4%2C10.5%2C4%2C14.5%2C0S291%2C201.3%2C287%2C197.3z%22%2F%3E%3C%2Fsvg%3E'); /* Custom dropdown arrow */
+      background-repeat: no-repeat;
+      background-position: right 0.7em top 50%, 0 0;
+      background-size: 0.65em auto, 100%;
     }
+    /* Styling for buttons */
     button {
       padding: 0.75rem 1.5rem;
-      background: #0077cc;
+      background: #0077cc; /* Blue background */
       color: white;
       border: none;
       border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
       margin-top: 1rem;
-      transition: transform 0.2s ease;
+      transition: transform 0.2s ease, background 0.2s ease; /* Smooth transition for hover effects */
     }
+    /* Hover effect for buttons */
     button:hover {
-      background: #005fa3;
-      transform: scale(1.05);
+      background: #005fa3; /* Darker blue on hover */
+      transform: scale(1.05); /* Slightly enlarge on hover */
     }
+    /* Styling for the result message area */
     .result {
       margin-top: 1.5rem;
       font-size: 1.2rem;
+      min-height: 1.5rem; /* Reserve space to prevent layout shifts */
     }
+    /* Styling for the important notes section */
     .note {
       margin-top: 2rem;
       font-size: 0.9rem;
       text-align: left;
-      background: #e0f0ff;
-      border-left: 5px solid #0077cc;
+      background: #e0f0ff; /* Light blue background for notes */
+      border-left: 5px solid #0077cc; /* Blue left border */
       padding: 1rem;
       border-radius: 8px;
     }
-    button {
-      padding: 0.6rem 1.2rem;
-      background: #0077cc;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 1rem;
+    /* Container for the back to main button */
+    .container {
+        margin-top: 2rem;
     }
-    button:hover {
-      background: #005fa3;
+
+    /* Responsive adjustments for smaller screens */
+    @media (max-width: 600px) {
+        body {
+            padding: 1rem;
+        }
+        .card {
+            padding: 1.5rem;
+        }
+        button {
+            padding: 0.6rem 1.2rem;
+            font-size: 0.9rem;
+        }
+        .result {
+            font-size: 1rem;
+        }
+        .note {
+            padding: 0.8rem;
+            font-size: 0.8rem;
+        }
     }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Group Draw</h1>
-    <input type="text" id="player1" placeholder="Player 1 Name" oninput="toUpperCase(this)" />
-    <input type="text" id="player2" placeholder="Player 2 Name" oninput="toUpperCase(this)" />
+    <h1>UniMAP Petanque Group Draw</h1>
+    <!-- Dropdown list for Player 1 selection -->
+    <select id="player1Select">
+      <option value="">-- Select Player 1 --</option>
+    </select>
+    <!-- Dropdown list for Player 2 selection -->
+    <select id="player2Select">
+      <option value="">-- Select Player 2 --</option>
+    </select>
     <button onclick="drawGroup()">🎯 Draw Group</button>
     <div class="result" id="resultMsg"></div>
 
@@ -96,11 +134,18 @@
     </div>
   </div>
 
-  <!-- Firebase SDK -->
+  <div class="container">
+    <button onclick="location.href='index.html'">Back to Main</button>
+  </div>
+
+  <!-- Firebase SDKs are loaded as modules. -->
   <script type="module">
+    // Import necessary Firebase functions.
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
     import { getFirestore, collection, getDocs, addDoc, query, where } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
+    // Firebase configuration details.
+    // Replace with your actual Firebase project configuration.
     const firebaseConfig = {
       apiKey: "AIzaSyDpS-kqwQDgdqiVK2kwXGB9a3B7WeJI_Iw",
       authDomain: "unimap-petanque.firebaseapp.com",
@@ -110,91 +155,285 @@
       appId: "1:578920021890:web:987ed2de28e7b0353c999b"
     };
 
+    // Initialize Firebase app and get Firestore instance.
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // Define the available groups and the maximum number of teams per group.
     const groups = ["A", "B", "C", "D", "E", "F"];
-    const groupLimit = 5;
+    const groupLimit = 5; // Maximum 5 teams per group.
 
+    // Hardcoded player data from the user's input, flattened and made unique for dropdowns.
+    const allPlayers = [
+        "AUFA SAFIYA BINTI MOHD ASRI", "FARAH LIYANA BINTI BADROL SHAM",
+        "DANIAL HISYAM BIN ZULKEFLI", "NORUL AZIM BIN NORULMIN",
+        "IZZAT AIMAN BIN ZAHARI", "AHMAD SYARIFUDDIN BIN MOHD LIAH",
+        "ADAM HAFEEZY", "MUHAMMAD ARSYAD BIN ABD JAMIL",
+        "NOOR SOFIYYAH BINTI ABDUL AZIZ", "MIA SARA BINTI ZURAIHAN",
+        "WAN NUR NABILA HUSNA BINTI WAN MOHAMAD SUHAIMI", "NOR RAIDATUL JANNAH BINTI MOKHTAR",
+        "SITI MAISARAH BINTI ABDUL GHANI", "MUHAMMAD NABIL BIN AZLIMI",
+        "NOOR SYAWANIE BINTI ABDULLAH", "NOR AINUN NAJJAH BINTI NOR AZMAN",
+        "MUHAMMAD ALIF NABIL", "MHAMMAD KASYFU AZRI",
+        "MOHD EZHAM HAKIMI BIN MOHD EFFARDY", "NAMA AHLI", // Note: "NAMA AHLI" is a placeholder
+        "IRFAN DANIEL BIN ISHAK", "MUHAMMAD FATHI HAZIQ BIN MUHAMAD ABD FATAH",
+        "MUHAMMAD IKHQWAN HAQIMIE BIN ROSLAN", "MUHAMMAD ASIFF BIN MOHAMAD SHAHRIN",
+        "MUHAMMAD NUDZRAN BIN MOHD HISBANY", "HAZIQ ISKANDAR BIN HARON",
+        "NUR INTAN DYANA BINTI JAMIL", "NUR ANIS MAISARAH BINTI MOHD ASRI",
+        "MUHAMMAD FARIS BIN AZHAR", "MOHD EFFENDY BIN ISMAIL",
+        "MUHAMMAD TORIQ ZIYAD BIN SAIFUL", "MUHAMMAD SYAHMI BIN MOHD KHAIRUL AZAHARI",
+        "MUHAMMAD AKHMAL BIN RAZALI", "MATTHEW JAWAN DIGAT",
+        "MEGAT MUHAMMAD ZAFRI BIN SUHAIMI", "MUHAMMAD AMIRUL HAIKAL BIN ROSLEE",
+        "MUHAMMAD HAZIQ ASYRAFF BIN MOHD NOR", "MUHAMMAD SYAZANI BIN MD RADZI",
+        "MUHAMMAD ARIF BIN AHMAD", "DANIAL IRFAN BIN MOHD SYUKRI",
+        "ALI NAJMUDDIN BIN ABDUL RAZAK", "NASHHAN AMIRY BIN NAZRI",
+        "MOHAMAD NAIM FAHMI BIN MOHAMAD YASIR", "MUHAMMAD RIDZUAN BIN MOHAMAD GANI",
+        "MUHAMMAD DANISH BIN AMIRUDDIN", "MOHAMAD SYAFIQ AIMAN BIN KHASNAN",
+        "MUHAMAD HABIB HAIQAL BIN KAMARUDIN", "MOHAMAD NAZEEM BIN MOHD FADZIL",
+        "MUHAMMAD AMIR SAFUAN BIN ABDUL RASHID", "MUHAIMIN BIN MOZARIMAN",
+        "MUHAMMAD FAHIM DINI BIN AZHAR", "MUHAMMAD DANIAL IQBAL BIN MUHAMAD RIZAN",
+        "MUHAMMAD HAZIQ HAIKAL BIN YUSRIZAM", "MUHAMMAD MAIZOL AMMAR BIN ZAINOL ABIDIN",
+        "MOHAMAD AFIQ AFFENDI BIN ZOLKIFLEE", "NABIL RAMZI BIN MOHD NASIR",
+        "MUHAMMAD AFIQ ANWAR TAN BIN MUHAMMAD ASYRAF TAN", "MUHAMMAD ADAM BIN AHMAD KAMAL"
+    ].map(name => name.trim().toUpperCase()); // Trim and uppercase all names
+
+    /**
+     * Populates the two player selection dropdowns with the predefined player names.
+     */
+    function populatePlayerDropdowns() {
+      const player1Select = document.getElementById("player1Select");
+      const player2Select = document.getElementById("player2Select");
+
+      // Add options for each player to both dropdowns
+      allPlayers.forEach((player, index) => {
+        // Option for Player 1 dropdown
+        const option1 = document.createElement("option");
+        option1.value = player;
+        option1.textContent = `${index + 1}. ${player}`; // Add numbering
+        player1Select.appendChild(option1);
+
+        // Option for Player 2 dropdown
+        const option2 = document.createElement("option");
+        option2.value = player;
+        option2.textContent = `${index + 1}. ${player}`; // Add numbering
+        player2Select.appendChild(option2);
+      });
+    }
+
+    /**
+     * Asynchronously gets an available group for a new team, ensuring balanced distribution.
+     * It prioritizes groups with the fewest teams and then selects randomly among them.
+     * @returns {Promise<{name: string, group: string}|null>} A Promise that resolves to an object
+     * containing the full team name (e.g., "A1") and the group letter (e.g., "A"),
+     * or null if all groups are full.
+     */
     async function getAvailableGroup() {
+      // Fetch all existing teams from the 'teams' collection.
       const teamsSnapshot = await getDocs(collection(db, "teams"));
       const groupCounts = {};
 
+      // Initialize all group counts to 0.
+      groups.forEach(g => groupCounts[g] = 0);
+
+      // Populate groupCounts with the current number of teams in each group.
       teamsSnapshot.forEach((doc) => {
         const team = doc.data();
-        if (!groupCounts[team.group]) groupCounts[team.group] = 0;
-        groupCounts[team.group]++;
+        // Ensure the group exists in our predefined 'groups' array before incrementing.
+        if (groupCounts[team.group] !== undefined) {
+          groupCounts[team.group]++;
+        }
       });
 
-      const availableGroups = groups.filter(g => (groupCounts[g] || 0) < groupLimit);
-      if (availableGroups.length === 0) return null;
+      // Find the minimum number of teams in any non-full group.
+      let minCount = Infinity;
+      let leastPopulatedGroups = [];
 
-      // Shuffle to randomize group
-      const shuffled = availableGroups.sort(() => 0.5 - Math.random());
-      const selectedGroup = shuffled[0];
-      const groupNumber = (groupCounts[selectedGroup] || 0) + 1;
+      // Iterate through all groups to find those with the least number of teams
+      // and are not yet full.
+      for (const group of groups) {
+        const count = groupCounts[group];
+        if (count < groupLimit) { // Only consider groups that are not yet full.
+          if (count < minCount) {
+            minCount = count;
+            leastPopulatedGroups = [group]; // Start a new list if a new minimum is found.
+          } else if (count === minCount) {
+            leastPopulatedGroups.push(group); // Add to list if count matches the current minimum.
+          }
+        }
+      }
+      
+      // If no available groups (all are full), return null.
+      if (leastPopulatedGroups.length === 0) {
+          return null;
+      }
 
+      // Randomly select one group from the least populated (and non-full) groups.
+      const selectedGroup = leastPopulatedGroups[Math.floor(Math.random() * leastPopulatedGroups.length)];
+      // Determine the sequential number for the team within the selected group (e.g., A1, A2).
+      const groupNumber = groupCounts[selectedGroup] + 1;
+
+      // Return the assigned group details.
       return {
-        name: selectedGroup + groupNumber,
-        group: selectedGroup
+        name: selectedGroup + groupNumber, // e.g., "A1", "B3"
+        group: selectedGroup // e.g., "A", "B"
       };
     }
 
+    /**
+     * Handles the group drawing logic when the "Draw Group" button is clicked.
+     * It validates inputs, checks for existing teams, assigns a group, and saves to Firebase.
+     */
     async function drawGroup() {
-      const p1 = document.getElementById("player1").value.trim().toUpperCase();
-      const p2 = document.getElementById("player2").value.trim().toUpperCase();
+      const p1 = document.getElementById("player1Select").value.trim().toUpperCase();
+      const p2 = document.getElementById("player2Select").value.trim().toUpperCase();
       const resultDiv = document.getElementById("resultMsg");
 
+      // Clear previous messages and styling from the result display.
+      // Kosongkan mesej dan gaya sebelumnya dari paparan hasil.
+      resultDiv.textContent = "";
+      resultDiv.style.color = "";
+      
+      // Validate that both player names are selected.
+      // Sahkan kedua-dua nama pemain telah dipilih.
       if (!p1 || !p2) {
-        resultDiv.textContent = "❗ Please enter both player names.";
+        resultDiv.textContent = "❗ Please select both Player 1 and Player 2.";
         resultDiv.style.color = "red";
         return;
       }
 
-      // Check if already exists
+      // Validate that Player 1 and Player 2 are not the same person.
+      // Sahkan Pemain 1 dan Pemain 2 bukan orang yang sama.
+      if (p1 === p2) {
+        resultDiv.textContent = "❗ Player 1 and Player 2 cannot be the same person. Please select different players.";
+        resultDiv.style.color = "red";
+        return;
+      }
+
+      // Fetch all existing teams from the 'teams' collection to perform comprehensive checks.
+      // Ambil semua pasukan sedia ada dari koleksi 'teams' untuk melakukan semakan menyeluruh.
       const teamsRef = collection(db, "teams");
-      const teamsSnapshot = await getDocs(teamsRef);
-      const alreadyExists = teamsSnapshot.docs.some(doc => {
+      const teamsSnapshot = await getDocs(teamsRef); 
+
+      let player1InExistingTeam = null; // Stores data of team where p1 is found
+      let player2InExistingTeam = null; // Stores data of team where p2 is found
+      let exactTeamExists = null;      // Stores data if the exact p1, p2 pair exists
+
+      // Iterate through all existing teams to check for player registration status.
+      // Ulang melalui semua pasukan sedia ada untuk menyemak status pendaftaran pemain.
+      teamsSnapshot.docs.forEach(doc => {
         const data = doc.data();
-        return (data.player1 === p1 && data.player2 === p2) || (data.player1 === p2 && data.player2 === p1);
+        const existingP1 = data.player1;
+        const existingP2 = data.player2;
+
+        // Check for exact team match (p1 & p2 together)
+        // Semak untuk padanan pasukan yang tepat (p1 & p2 bersama).
+        if ((existingP1 === p1 && existingP2 === p2) || (existingP1 === p2 && existingP2 === p1)) {
+          exactTeamExists = data;
+        }
+
+        // Check if p1 is already in any team
+        // Semak jika p1 sudah berada dalam mana-mana pasukan.
+        if (existingP1 === p1 || existingP2 === p1) {
+          player1InExistingTeam = data;
+        }
+
+        // Check if p2 is already in any team
+        // Semak jika p2 sudah berada dalam mana-mana pasukan.
+        if (existingP1 === p2 || existingP2 === p2) {
+          player2InExistingTeam = data;
+        }
       });
 
-      if (alreadyExists) {
-        resultDiv.textContent = "⚠️ This team has already drawn a group.";
+      // Priority 1: Exact team trying to draw again.
+      // Prioriti 1: Pasukan yang sama cuba membuat cabutan semula.
+      if (exactTeamExists) {
+        resultDiv.textContent = `⚠️ Your team has already been assigned to Group ${exactTeamExists.teamName}.`;
         resultDiv.style.color = "red";
         return;
       }
 
+      // Priority 2: Either player is already in *another* team (not the current exact pair).
+      // Prioriti 2: Sama ada pemain sudah berada dalam pasukan *lain* (bukan pasangan tepat semasa).
+      if (player1InExistingTeam && player2InExistingTeam) {
+          // Both players exist, but in different teams, prevent forming a new team.
+          // Kedua-dua pemain wujud, tetapi dalam pasukan yang berbeza, halang pembentukan pasukan baharu.
+          resultDiv.textContent = `⚠️ Both players are already registered in different teams. Player 1 (${p1}) in Group ${player1InExistingTeam.teamName}, Player 2 (${p2}) in Group ${player2InExistingTeam.teamName}.`;
+          resultDiv.style.color = "red";
+          return;
+      } else if (player1InExistingTeam) {
+          // Player 1 is already registered in a team.
+          // Pemain 1 sudah didaftarkan dalam satu pasukan.
+          resultDiv.textContent = `⚠️ Player 1 (${p1}) is already registered in Group ${player1InExistingTeam.teamName}.`;
+          resultDiv.style.color = "red";
+          return;
+      } else if (player2InExistingTeam) {
+          // Player 2 is already registered in a team.
+          // Pemain 2 sudah didaftarkan dalam satu pasukan.
+          resultDiv.textContent = `⚠️ Player 2 (${p2}) is already registered in Group ${player2InExistingTeam.teamName}.`;
+          resultDiv.style.color = "red";
+          return;
+      }
+
+      // If we reach here, no existing team found for this exact pair,
+      // and neither player is individually registered in any other team.
+      // Proceed with group assignment.
+      // Jika sampai di sini, tiada pasukan sedia ada ditemui untuk pasangan tepat ini,
+      // dan tiada pemain didaftarkan secara individu dalam pasukan lain.
+      // Teruskan dengan penetapan kumpulan.
       const group = await getAvailableGroup();
+      // If no group is available (all are full), display an error and stop.
+      // Jika tiada kumpulan yang tersedia (semua penuh), paparkan ralat dan berhenti.
       if (!group) {
-        resultDiv.textContent = "❌ All groups are full.";
+        resultDiv.textContent = "❌ All groups are full. Please contact the organizers.";
         resultDiv.style.color = "red";
         return;
       }
 
-      await addDoc(teamsRef, {
-        player1: p1,
-        player2: p2,
-        group: group.group,
-        teamName: group.name,
-        timestamp: new Date()
-      });
+      // Try to add the new team's information to Firebase.
+      // Cuba tambah maklumat pasukan baharu ke Firebase.
+      try {
+        await addDoc(teamsRef, {
+          player1: p1,
+          player2: p2,
+          group: group.group, // The group letter (e.g., "A")
+          teamName: group.name, // The combined name (e.g., "A1")
+          timestamp: new Date() // Timestamp of the draw
+        });
 
-      resultDiv.textContent = `✅ Your team is assigned to Group ${group.name}`;
-      resultDiv.style.color = "green";
-      document.querySelector("button").disabled = true;
+        // Display success message.
+        // Paparkan mesej kejayaan.
+        resultDiv.textContent = `✅ Your team has been assigned to Group ${group.name}`;
+        resultDiv.style.color = "green";
+        // Disable the draw button to prevent multiple draws from the same input.
+        // Lumpuhkan butang cabutan untuk mengelakkan cabutan berganda dari input yang sama.
+        document.querySelector("button").disabled = true;
+
+        // Optionally, remove the selected players from the dropdowns after a successful draw
+        // (This part can be complex if players can be part of multiple teams;
+        // for simplicity, we'll just disable the button for this session)
+      } catch (error) {
+        // Log and display error if Firebase operation fails.
+        // Log dan paparkan ralat jika operasi Firebase gagal.
+        console.error("Error adding document: ", error);
+        resultDiv.textContent = "❗ An error occurred while assigning the group. Please try again.";
+        resultDiv.style.color = "red";
+      }
     }
 
-    // Expose function globally
+    // Call populatePlayerDropdowns when the page loads to fill the dropdowns.
+    // Panggil populatePlayerDropdowns apabila halaman dimuatkan untuk mengisi dropdowns.
+    window.onload = populatePlayerDropdowns;
+
+    // Expose the drawGroup function globally so it can be called from the HTML `onclick` attribute.
+    // Dedahkan fungsi drawGroup secara global supaya ia boleh dipanggil dari atribut `onclick` HTML.
     window.drawGroup = drawGroup;
 
-    // Auto uppercase
+    // The toUpperCase function is no longer directly used with input elements but defined for consistency.
+    // Fungsi toUpperCase tidak lagi digunakan secara langsung dengan elemen input tetapi ditakrifkan untuk konsistensi.
     window.toUpperCase = function(input) {
-      input.value = input.value.toUpperCase();
+      // This function is not directly used by the select elements' values,
+      // as they are pre-formatted.
+      // Keeping it for future use if text inputs are reintroduced.
     };
   </script>
-    <div class="container">
-    <button onclick="location.href='index.html'">Back to Main</button>
-  </div>
 </body>
 </html>
